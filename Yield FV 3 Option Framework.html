@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yield Fair Value — Three-Option Framework</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#070a0f;--bg2:#0c1119;--bg3:#121a24;--bg4:#1a2333;--b1:#1e2b3c;--b2:#273a52;
+--tx:#e8f0f7;--tx2:#a8c0d1;--tx3:#6b8da6;--cy:#00d4ff;--cy2:#33c5e8;--am:#ffb038;
+--gr:#25c97e;--rd:#ff5252;--pu:#b89ef0;--bl:#4da8f5;
+--mono:'Space Mono',monospace;--disp:'Syne',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--mono);font-size:12px;min-height:100vh}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.012) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+.hdr{position:relative;z-index:1;padding:22px 32px 18px;border-bottom:1px solid var(--b1);background:linear-gradient(135deg,rgba(0,212,255,0.04)0%,transparent 55%)}
+.hdr-eye{font-size:8px;letter-spacing:0.3em;color:var(--cy2);text-transform:uppercase;font-family:var(--disp);margin-bottom:4px}
+.hdr-h1{font-size:19px;font-weight:800;font-family:var(--disp);color:#fff;letter-spacing:-0.02em}
+.hdr-h1 em{color:var(--cy);font-style:normal}
+.hdr-sub{font-size:9px;color:var(--tx2);margin-top:4px;line-height:1.65;letter-spacing:0.03em}
+.chips{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+.chip{font-size:7px;letter-spacing:0.12em;text-transform:uppercase;padding:2px 8px;border-radius:2px;border:1px solid}
+.ch-cy{border-color:var(--cy);color:var(--cy);background:rgba(0,212,255,0.05)}
+.ch-am{border-color:var(--am);color:var(--am);background:rgba(255,176,56,0.05)}
+.ch-gr{border-color:var(--gr);color:var(--gr);background:rgba(37,201,126,0.05)}
+.ch-rd{border-color:var(--rd);color:var(--rd);background:rgba(255,82,82,0.05)}
+.onav{position:relative;z-index:1;display:flex;background:var(--bg2);border-bottom:1px solid var(--b1)}
+.obtn{flex:1;padding:12px 6px;text-align:center;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-family:var(--disp);font-weight:700;color:var(--tx2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.obtn:hover{color:var(--tx2)}.obtn.on{color:#fff;border-bottom-color:var(--cy)}
+.onum{display:block;font-size:7px;color:var(--cy);margin-bottom:1px;letter-spacing:0.2em}
+.tbar{display:flex;gap:6px;padding:14px 32px 0;align-items:center;position:relative;z-index:1;flex-wrap:wrap}
+.tlbl{font-size:7px;letter-spacing:0.2em;text-transform:uppercase;color:var(--tx2);margin-right:3px}
+.tb{padding:4px 13px;font-size:9px;border:1px solid var(--b2);background:transparent;color:var(--tx2);cursor:pointer;border-radius:2px;font-family:var(--mono);transition:all .15s}
+.tb:hover{border-color:var(--cy);color:var(--cy)}.tb.on{background:var(--cy);color:var(--bg);border-color:var(--cy);font-weight:700}
+.ocnt{display:none;padding:16px 32px 36px;position:relative;z-index:1}.ocnt.on{display:block}
+.banner{background:rgba(255,176,56,0.05);border:1px solid rgba(255,176,56,0.18);border-radius:3px;padding:9px 13px;margin-bottom:14px;font-size:10px;color:var(--tx);line-height:1.65;font-family:var(--disp)}
+.banner b{color:var(--am)}
+.desc{background:var(--bg3);border:1px solid var(--b1);border-top:2px solid var(--cy);border-radius:3px;padding:12px 14px;margin-bottom:14px}
+.desc.am{border-top-color:var(--am)}.desc.pu{border-top-color:var(--pu)}
+.desc-t{font-size:8px;letter-spacing:0.18em;text-transform:uppercase;font-family:var(--disp);font-weight:700;color:var(--cy);margin-bottom:5px}
+.desc.am .desc-t{color:var(--am)}.desc.pu .desc-t{color:var(--pu)}
+.desc-b{font-size:10px;color:var(--tx);line-height:1.6;font-family:var(--disp)}
+.formula{font-family:var(--mono);font-size:9px;color:var(--tx);background:var(--bg4);padding:5px 8px;border-radius:2px;margin-top:6px;border-left:2px solid var(--cy)}
+.krow{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
+.kpi{background:var(--bg3);border:1px solid var(--b1);border-radius:3px;padding:9px 11px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cy),transparent);opacity:0.25}
+.kl{font-size:7px;letter-spacing:0.16em;text-transform:uppercase;color:var(--tx2);margin-bottom:2px;font-family:var(--disp)}
+.kv{font-size:16px;font-weight:700;font-family:var(--disp);color:#fff}
+.ks{font-size:8px;color:var(--tx2);margin-top:1px}
+.kv.cy{color:var(--cy)}.kv.am{color:var(--am)}.kv.gr{color:var(--gr)}.kv.rd{color:var(--rd)}
+.g2{display:grid;grid-template-columns:1.25fr 1fr;gap:12px;margin-bottom:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.panel{background:var(--bg3);border:1px solid var(--b1);border-radius:3px;padding:13px}
+.ptit{font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:var(--cy);margin-bottom:10px;font-family:var(--disp);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.ptit span{color:var(--tx2);font-family:var(--mono);font-size:8px;font-weight:400}
+.cwrap{position:relative}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:7px;letter-spacing:0.13em;text-transform:uppercase;color:var(--tx2);padding:4px 6px;border-bottom:1px solid var(--b1);text-align:right;font-family:var(--disp)}
+.tbl th:first-child{text-align:left}
+.tbl td{padding:4px 6px;border-bottom:1px solid rgba(30,43,60,0.5);font-size:10px;text-align:right;transition:background .1s}
+.tbl td:first-child{text-align:left;color:var(--tx)}.tbl tr:hover td{background:rgba(0,212,255,0.03)}.tbl tr:last-child td{border-bottom:none}
+.cc{font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px;background:var(--bg4);color:var(--tx2);min-width:22px;display:inline-block;text-align:center}
+.nm{font-size:9px;color:var(--tx2);font-family:var(--disp);margin-left:3px}
+.rw{display:flex;align-items:center;gap:3px;justify-content:flex-end}
+.rb{height:5px;border-radius:1px;min-width:1px}.rbp{background:var(--rd)}.rbn{background:var(--gr)}
+.rv{font-size:10px;font-weight:700;width:52px;text-align:right}.rvp{color:var(--rd)}.rvn{color:var(--gr)}
+.sig{font-size:7px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;padding:1px 5px;border-radius:2px}
+.sc{background:rgba(255,82,82,0.1);color:var(--rd);border:1px solid rgba(255,82,82,0.22)}
+.sr{background:rgba(37,201,126,0.08);color:var(--gr);border:1px solid rgba(37,201,126,0.18)}
+.sf{background:rgba(107,141,166,0.1);color:#c2d1de;border:1px solid var(--b2)}
+.note{background:rgba(0,212,255,0.035);border:1px solid rgba(0,212,255,0.1);border-left:2px solid var(--cy);padding:8px 12px;font-size:9px;color:var(--tx);line-height:1.7;border-radius:0 3px 3px 0;font-family:var(--disp);margin-top:12px}
+.note b{color:var(--cy)}.note .wa{color:#ffca6a}.note .fl{color:#ff8080}
+.dg{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px}
+.dc{background:var(--bg3);border:1px solid var(--b1);border-radius:3px;padding:11px;text-align:center}
+.dcc{font-size:11px;font-weight:700;color:#fff;font-family:var(--disp);margin-bottom:1px}
+.dcn{font-size:8px;color:var(--tx2);font-family:var(--disp);margin-bottom:7px}
+.dst{height:18px;display:flex;border-radius:2px;overflow:hidden;margin-bottom:5px}
+.ds{height:100%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:rgba(0,0,0,0.75);white-space:nowrap;overflow:hidden}
+.dl{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
+.dli{font-size:7px;color:var(--tx2);display:flex;align-items:center;gap:2px}
+.dld{width:7px;height:7px;border-radius:1px;flex-shrink:0}
+.fcards{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:12px}
+.fc{background:var(--bg3);border:1px solid var(--b1);border-radius:3px;padding:9px 10px}
+.fcc{font-size:10px;font-weight:700;color:#fff;font-family:var(--disp)}
+.fcn{font-size:8px;color:var(--tx2);margin-bottom:6px;font-family:var(--disp)}
+.fcr{display:flex;justify-content:space-between;font-size:9px;padding:2px 0;border-bottom:1px solid rgba(30,43,60,0.4)}
+.fcr:last-child{border-bottom:none}.fck{color:var(--tx)}.fcv{font-weight:600}
+.up{color:var(--rd)}.dn{color:var(--gr)}
+.div{height:1px;background:var(--b1);margin:12px 0}
+
+/* ── COUNTRY EXCLUSION PANEL ── */
+.excl-wrap{background:var(--bg3);border:1px solid var(--b1);border-radius:3px;padding:11px 14px;margin-bottom:14px}
+.excl-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;flex-wrap:wrap;gap:6px}
+.excl-title{font-size:8px;letter-spacing:0.18em;text-transform:uppercase;font-family:var(--disp);font-weight:700;color:var(--cy)}
+.excl-meta{font-size:9px;color:var(--tx2)}
+.excl-btn{font-size:8px;padding:2px 8px;border:1px solid var(--b2);background:transparent;color:var(--tx2);border-radius:2px;cursor:pointer;font-family:var(--mono);transition:all .15s}
+.excl-btn:hover{border-color:var(--cy);color:var(--cy)}
+.ctags{display:flex;flex-wrap:wrap;gap:5px}
+.ctag{font-size:9px;font-weight:700;padding:3px 8px;border-radius:2px;cursor:pointer;transition:all .15s;font-family:var(--mono);user-select:none;border:1px solid transparent}
+.ctag.inc{background:var(--bg4);color:#e8f0f7;border-color:var(--b2)}
+.ctag.exc{background:rgba(255,82,82,0.1);color:var(--rd);border-color:rgba(255,82,82,0.3);text-decoration:line-through;opacity:0.6}
+.ctag:hover{filter:brightness(1.2)}
+/* ── CURVE FIT CONTROLS ── */
+.fit-bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.fit-lbl{font-size:8px;letter-spacing:0.15em;text-transform:uppercase;color:var(--tx2);margin-right:2px}
+.fit-info{font-size:9px;color:var(--tx2);margin-left:auto;background:var(--bg4);padding:3px 10px;border-radius:2px;border:1px solid var(--b1)}
+.fit-info b{color:var(--am)}
+
+/* ── CURVE TOGGLE BUTTONS ── */
+.curve-toggles{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.ctg{font-size:9px;font-weight:700;padding:4px 11px;border-radius:2px;cursor:pointer;
+  font-family:var(--mono);border:1px solid;transition:all .15s;user-select:none;
+  display:flex;align-items:center;gap:5px}
+.ctg .ctg-line{width:16px;height:2px;border-radius:1px;flex-shrink:0}
+.ctg.off{opacity:0.35;filter:grayscale(0.6)}
+.ctg:hover{filter:brightness(1.2)}
+
+/* ── COUNTRY TAB ── */
+.cc-selector{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.cc-pill{font-size:9px;font-weight:700;padding:4px 10px;border-radius:2px;cursor:pointer;
+  font-family:var(--mono);border:1px solid var(--b2);background:var(--bg4);color:var(--tx2);
+  transition:all .15s;user-select:none}
+.cc-pill:hover{filter:brightness(1.3)}
+.cc-pill.active{color:var(--bg);font-weight:700;box-shadow:0 0 8px currentColor}
+.country-hero{display:flex;gap:10px;margin-bottom:14px;align-items:flex-start}
+.hero-flag{width:56px;height:56px;border-radius:4px;display:flex;align-items:center;
+  justify-content:center;font-size:26px;flex-shrink:0;border:1px solid var(--b1)}
+.hero-info{flex:1}
+.hero-name{font-size:18px;font-weight:800;font-family:var(--disp);color:#fff}
+.hero-sub{font-size:10px;color:var(--tx2);margin-top:2px;font-family:var(--disp)}
+.signal-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.signal-tag{font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 8px;
+  border-radius:2px;border:1px solid;font-weight:700}
+.st-cheap{color:var(--rd);border-color:rgba(255,82,82,0.35);background:rgba(255,82,82,0.08)}
+.st-rich{color:var(--gr);border-color:rgba(37,201,126,0.3);background:rgba(37,201,126,0.07)}
+.st-fair{color:var(--tx2);border-color:var(--b2);background:var(--bg4)}
+.conv-agree{color:var(--am);border-color:rgba(255,176,56,0.35);background:rgba(255,176,56,0.08)}
+.model-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.ml-item{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--tx2)}
+.ml-line{width:22px;height:2px;border-radius:1px;flex-shrink:0}
+.ml-dash{background:repeating-linear-gradient(90deg,currentColor 0,currentColor 4px,transparent 4px,transparent 8px)}
+.residual-summary{background:var(--bg3);border:1px solid var(--b1);border-radius:3px;
+  padding:10px 14px;margin-top:12px}
+.rs-title{font-size:8px;letter-spacing:0.15em;text-transform:uppercase;color:var(--cy2);
+  font-family:var(--disp);font-weight:600;margin-bottom:8px}
+.rs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rs-cell{text-align:center}
+.rs-tenor{font-size:8px;color:var(--tx3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px}
+.rs-vals{display:flex;flex-direction:column;gap:2px}
+.rs-val{font-size:10px;font-weight:600}
+</style>
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-eye">Sovereign Bond Analytics</div>
+  <div class="hdr-h1">Yield <em>Fair Value</em> — Three-Option Framework</div>
+  <div class="hdr-sub">
+    Swap data (IRSB, 3 Apr 2026): USD SOFR · EUR 6M · GBP SONIA · JPY OIS · CAD OIS · AUD 3M · NZD 3M · CHF SARON · SEK 3M · KRW KOFR OIS · SGD SORA · CNY 7D REPO<br>
+    Macro forecasts: IMF WEO Apr 2026 (structural, 2026–2030) · OECD Economic Outlook Mar 2026 (near-term: Iran conflict energy/stagflation shock)
+  </div>
+  <div class="chips">
+    <span class="chip ch-cy">n=24 DM Sovereigns</span>
+    <span class="chip ch-am">4 Tenors · 12 Swap Curves (Primary PDF)</span>
+    <span class="chip ch-gr">ASW Model Adj R²=0.766 @ 10Y</span>
+    <span class="chip ch-rd">KRW ASW Corrected via KOFR OIS</span>
+  </div>
+</div>
+
+<div class="onav">
+  <div class="obtn on" onclick="setOpt('A')"><span class="onum">OPTION A</span>Swap Rate + ASW Model</div>
+  <div class="obtn" onclick="setOpt('B')"><span class="onum">OPTION B</span>Spread vs Benchmark</div>
+  <div class="obtn" onclick="setOpt('C')"><span class="onum">OPTION C</span>Fisher Decomposition r*+π*+TP</div>
+  <div class="obtn" onclick="setOpt('D')"><span class="onum">COUNTRY</span>Full Curve Analysis</div>
+</div>
+
+<!-- OPTION A -->
+<div class="ocnt on" id="opt-A">
+  <div class="tbar">
+    <span class="tlbl">Tenor</span>
+    <button class="tb" onclick="setTA('2Y')">2Y</button>
+    <button class="tb" onclick="setTA('5Y')">5Y</button>
+    <button class="tb on" onclick="setTA('10Y')">10Y</button>
+    <button class="tb" onclick="setTA('30Y')">30Y</button>
+  </div>
+
+  <div class="excl-wrap">
+    <div class="excl-hdr">
+      <span class="excl-title">Country Exclusions</span>
+      <span class="excl-meta" id="excl-meta-A">Click to toggle countries in/out of the fair value model</span>
+      <div style="display:flex;gap:5px">
+        <button class="excl-btn" onclick="inclAll('A')">Include All</button>
+        <button class="excl-btn" onclick="exclG10Only('A')">EUR Bloc Only</button>
+      </div>
+    </div>
+    <div class="ctags" id="ctags-A"></div>
+  </div>
+  <div class="fit-bar">
+    <span class="fit-lbl">Curve Fit</span>
+    <button class="tb on" id="fitA-lin" onclick="setFit('A','linear')">Linear</button>
+    <button class="tb" id="fitA-pol" onclick="setFit('A','poly2')">Quadratic</button>
+    <span class="fit-info" id="fit-info-A">R² = <b>—</b></span>
+  </div>
+  <div style="margin-top:0" class="desc">
+    <div class="desc-t">Option A — Yield = Swap Rate + ASW (Cleanest Approach)</div>
+    <div class="desc-b">The local OIS/swap rate already prices the CB policy path, inflation expectations and liquidity term premium in each currency. Adding the ASW regression model output gives a structurally consistent fair value yield without cross-currency comparability issues.</div>
+    <div class="formula">Fair Value Yield(i,τ) = Swap(ccy,τ) + ASW_model(rating, net debt, political risk) / 100</div>
+  </div>
+  <div class="krow" id="kA"></div>
+  <div class="g2">
+    <div class="panel"><div class="ptit">Market Yield vs Model Fair Value <span id="a-r2"></span></div>
+      <div class="cwrap" style="height:280px"><canvas id="chA1"></canvas></div></div>
+    <div class="panel"><div class="ptit">Fair Value Residuals <span>+ = cheap · − = rich</span></div>
+      <div style="max-height:280px;overflow-y:auto">
+        <table class="tbl"><thead><tr><th>Country</th><th>Mkt Yield</th><th>FV Yield</th><th>Swap</th><th>Resid</th><th>Signal</th></tr></thead>
+        <tbody id="tbA"></tbody></table></div></div>
+  </div>
+  <div class="panel"><div class="ptit">Yield Decomposition — Swap Component vs ASW Component (top 9 by yield level)</div>
+    <div class="dg" id="dcA"></div></div>
+  <div class="note" id="ntA"></div>
+</div>
+
+<!-- OPTION B -->
+<div class="ocnt" id="opt-B">
+  <div class="tbar">
+    <span class="tlbl">Tenor</span>
+    <button class="tb" onclick="setTB('2Y')">2Y</button>
+    <button class="tb" onclick="setTB('5Y')">5Y</button>
+    <button class="tb on" onclick="setTB('10Y')">10Y</button>
+    <button class="tb" onclick="setTB('30Y')">30Y</button>
+    <span class="tlbl" style="margin-left:12px">Benchmark</span>
+    <button class="tb on" id="bDE" onclick="setBench('DE')">Bund (EUR)</button>
+    <button class="tb" id="bUS" onclick="setBench('US')">UST (USD)</button>
+  </div>
+
+  <div class="excl-wrap">
+    <div class="excl-hdr">
+      <span class="excl-title">Country Exclusions</span>
+      <span class="excl-meta" id="excl-meta-B">Click to toggle countries in/out of spread model</span>
+      <div style="display:flex;gap:5px">
+        <button class="excl-btn" onclick="inclAll('B')">Include All</button>
+        <button class="excl-btn" onclick="exclG10Only('B')">EUR Bloc Only</button>
+      </div>
+    </div>
+    <div class="ctags" id="ctags-B"></div>
+  </div>
+  <div class="fit-bar">
+    <span class="fit-lbl">Curve Fit</span>
+    <button class="tb on" id="fitB-lin" onclick="setFit('B','linear')">Linear</button>
+    <button class="tb" id="fitB-pol" onclick="setFit('B','poly2')">Quadratic</button>
+    <span class="fit-info" id="fit-info-B">R² = <b>—</b></span>
+  </div>
+  <div style="margin-top:0" class="desc am">
+    <div class="desc-t">Option B — Yield Spread vs Benchmark (Practitioner Approach)</div>
+    <div class="desc-b">Fair value spread decomposed into: ΔASW (credit/fiscal differential from regression model) + Δinflation (×1bp per bp) + Δgrowth (−50bp per 1pp, higher growth → tighter). Directly maps to how OAT-Bund, BTP-Bund, Gilt-UST spreads are analysed and traded.</div>
+    <div class="formula" style="border-left-color:var(--am)">Spread(i vs bench) = ΔASW_model + ΔInflation + ΔGrowth_proxy + Residual</div>
+  </div>
+  <div class="krow" id="kB"></div>
+  <div class="g2">
+    <div class="panel"><div class="ptit">Market Spread vs Model Fair Spread <span id="b-lbl"></span></div>
+      <div class="cwrap" style="height:280px"><canvas id="chB1"></canvas></div></div>
+    <div class="panel"><div class="ptit">Residuals vs Fair Spread <span>+ = cheap · − = rich</span></div>
+      <div style="max-height:280px;overflow-y:auto">
+        <table class="tbl"><thead><tr><th>Country</th><th>Mkt Spr</th><th>FV Spr</th><th>ΔASW</th><th>Resid</th><th>Signal</th></tr></thead>
+        <tbody id="tbB"></tbody></table></div></div>
+  </div>
+  <div class="note" id="ntB"></div>
+</div>
+
+<!-- OPTION C -->
+<div class="ocnt" id="opt-C">
+  <div class="tbar">
+    <span class="tlbl">Tenor</span>
+    <button class="tb" onclick="setTC('2Y-spot')" title="2Y: OECD 2026 only — point-in-time neutral rate">2Y (spot)</button>
+    <button class="tb" onclick="setTC('2Y-avg')"  title="2Y: avg OECD 2026-2027 — full 2Y holding period">2Y (avg)</button>
+    <button class="tb" onclick="setTC('5Y-IMF')"  title="5Y: avg IMF 2026-2030 — pre-war baseline">5Y (IMF)</button>
+    <button class="tb" onclick="setTC('5Y-WAR')"  title="5Y: avg war-adj 2026-2030 — OECD+decay">5Y (War-adj)</button>
+    <button class="tb on" onclick="setTC('10Y')">10Y</button>
+    <button class="tb" onclick="setTC('30Y')">30Y</button>
+    <span class="fit-info" style="margin-left:8px;font-size:9px;color:var(--tx2)" id="tenor-note-C"></span>
+  </div>
+
+  <div class="excl-wrap">
+    <div class="excl-hdr">
+      <span class="excl-title">Country Exclusions</span>
+      <span class="excl-meta" id="excl-meta-C">Click to toggle countries in/out of Fisher model</span>
+      <div style="display:flex;gap:5px">
+        <button class="excl-btn" onclick="inclAll('C')">Include All</button>
+        <button class="excl-btn" onclick="exclG10Only('C')">EUR Bloc Only</button>
+      </div>
+    </div>
+    <div class="ctags" id="ctags-C"></div>
+  </div>
+  <div class="fit-bar">
+    <span class="fit-lbl">Curve Fit</span>
+    <button class="tb on" id="fitC-lin" onclick="setFit('C','linear')">Linear</button>
+    <button class="tb" id="fitC-pol" onclick="setFit('C','poly2')">Quadratic</button>
+    <span class="fit-info" id="fit-info-C">R² = <b>—</b></span>
+  </div>
+  <div class="banner" style="margin-top:0">
+    ⚡ <b>Iran Conflict — Stagflationary Supply Shock (OECD Mar 2026):</b> Oil price spike and energy supply disruption drive a classic stagflationary shock — higher near-term inflation + lower growth simultaneously. OECD CPI: US +4.2%, UK +4.0%, AU +4.1% vs IMF long-run of 2.2%, 2.0%, 2.5%. This compresses short-end real rates and widens term premia. <b>Blended mode</b> uses OECD for 2Y/5Y and IMF long-run for 10Y/30Y, consistent with Kim-Wright (2005) ACM model treatment of near-term vs structural inflation.
+  </div>
+  <div class="desc pu">
+    <div class="desc-t">Option C — Fisher Decomposition: r* + π* + Term Premium</div>
+    <div class="desc-b">Most structurally rigorous. Three independent layers: (1) neutral real rate r* ≈ long-run GDP growth (Laubach-Williams 2003); (2) inflation expectation π* from OECD near-term or IMF structural; (3) term premium = ASW regression model (credit risk + fiscal + political). All three layers have separate empirical grounding.</div>
+    <div class="formula" style="border-left-color:var(--pu)">Fair Value Yield = r*(GDP forecast) + π*(CPI forecast) + Term_Premium(ASW model)/100</div>
+  </div>
+  <div class="krow" id="kC"></div>
+  <div class="g2">
+    <div class="panel"><div class="ptit">Market Yield vs Fisher Fair Value <span id="c-sc"></span></div>
+      <div class="cwrap" style="height:280px"><canvas id="chC1"></canvas></div></div>
+    <div class="panel"><div class="ptit">Fisher Decomposition <span>r* + π* + TP by country</span></div>
+      <div style="max-height:280px;overflow-y:auto">
+        <table class="tbl"><thead><tr><th>Country</th><th>Mkt</th><th>r*</th><th>π*</th><th>TP(bp)</th><th>FV</th><th>Resid</th></tr></thead>
+        <tbody id="tbC"></tbody></table></div></div>
+  </div>
+  <div class="panel">
+    <div class="ptit">Forward Fisher Fair Value 2026–2030 <span>10 key markets · IMF GDP+CPI path + ASW model TP</span></div>
+    <div class="cwrap" style="height:230px"><canvas id="chFwd"></canvas></div>
+    <div class="fcards" id="fcds"></div>
+  </div>
+  <div class="note" id="ntC"></div>
+</div>
+
+<script>
+// ─── ASW MODEL COEFFICIENTS ───────────────────────────────
+const MODS={'2Y':{c:{k:-19.992,net:0.176}},'5Y':{c:{k:-54.779,net:0.439,pol:0.396}},
+  '10Y':{c:{k:60.746,rtg:-7.860,net:0.501,pol:1.012}},'30Y':{c:{k:189.626,rtg:-14.382,net:0.606,pol:1.552,gdp:-11.512}}};
+function asw(d,t){const tk=({'2Y-spot':'2Y','2Y-avg':'2Y','5Y-IMF':'5Y','5Y-WAR':'5Y'})[t]||t;const m=MODS[tk].c;let v=m.k||0;if(m.rtg)v+=m.rtg*d.rtg;if(m.net)v+=m.net*(d.net??0);if(m.pol)v+=m.pol*d.pol;if(m.gdp)v+=m.gdp*d.gdp_i;return v;}
+
+// ─── DATA ────────────────────────────────────────────────
+const D=[
+ {cc:'US',n:'United States', rtg:20.33,net:103.0,pol:86.94,cb_gdp:22.0,gdp_i:2.1,gdp_o:2.0,cpi_i:2.4,cpi_o:4.2,cpi_l:2.2,gdp_l:1.8,
+  y2:3.80,y5:3.94,y10:4.31,y30:4.89, s2:3.6271,s5:3.6308,s10:3.8537,s30:4.0978,ccy:'USD',
+  nf:{2026:103.0,2027:106.6,2028:110.2,2029:113.6,2030:116.8},gf:{2026:2.1,2027:2.1,2028:2.1,2029:1.9,2030:1.8},cf:{2026:2.4,2027:2.2,2028:2.2,2029:2.2,2030:2.2},
+  wgf:[2.0,1.7,2.08,1.89,1.8],wcf:[4.2,1.6,2.65,2.38,2.29]},
+ {cc:'UK',n:'United Kingdom',rtg:18.33,net:95.9, pol:90.63,cb_gdp:19.5,gdp_i:1.3,gdp_o:0.7,cpi_i:2.5,cpi_o:4.0,cpi_l:2.0,gdp_l:1.4,
+  y2:4.32,y5:4.38,y10:4.83,y30:5.46, s2:4.2039,s5:4.1371,s10:4.3635,s30:4.7395,ccy:'GBP',
+  nf:{2026:95.9,2027:96.4,2028:96.8,2029:96.8,2030:96.4},gf:{2026:1.3,2027:1.5,2028:1.4,2029:1.4,2030:1.4},cf:{2026:2.5,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[0.7,1.3,1.25,1.34,1.37],wcf:[4.0,2.6,2.38,2.15,2.08]},
+ {cc:'DE',n:'Germany',       rtg:21.00,net:50.7, pol:80.92,cb_gdp:17.8,gdp_i:0.9,gdp_o:0.8,cpi_i:1.8,cpi_o:2.9,cpi_l:2.2,gdp_l:0.7,
+  y2:2.61,y5:2.71,y10:2.99,y30:3.47, s2:2.8197,s5:2.87,s10:3.0494,s30:3.12,ccy:'EUR',
+  nf:{2026:50.7,2027:53.1,2028:55.4,2029:57.7,2030:60.2},gf:{2026:0.9,2027:1.5,2028:1.2,2029:1.0,2030:0.7},cf:{2026:1.8,2027:2.0,2028:2.1,2029:2.2,2030:2.2},
+  wgf:[0.8,1.5,1.18,0.99,0.69],wcf:[2.9,2.6,2.38,2.31,2.26]},
+ {cc:'FR',n:'France',        rtg:19.00,net:111.3,pol:84.24,cb_gdp:21.7,gdp_i:0.9,gdp_o:0.8,cpi_i:1.5,cpi_o:1.8,cpi_l:1.9,gdp_l:1.2,
+  y2:2.79,y5:3.10,y10:3.68,y30:4.44, s2:2.8197,s5:2.87,s10:3.0494,s30:3.12,ccy:'EUR',
+  nf:{2026:111.3,2027:113.8,2028:116.3,2029:118.7,2030:121.1},gf:{2026:0.9,2027:1.2,2028:1.3,2029:1.2,2030:1.2},cf:{2026:1.5,2027:1.9,2028:1.9,2029:1.9,2030:1.9},
+  wgf:[0.8,1.0,1.28,1.19,1.2],wcf:[1.8,1.5,1.97,1.93,1.91]},
+ {cc:'IT',n:'Italy',         rtg:13.33,net:128.6,pol:49.65,cb_gdp:26.6,gdp_i:0.8,gdp_o:0.4,cpi_i:2.0,cpi_o:2.4,cpi_l:2.0,gdp_l:0.7,
+  y2:2.84,y5:3.23,y10:3.85,y30:4.60, s2:2.8197,s5:2.87,s10:3.0494,s30:3.12,ccy:'EUR',
+  nf:{2026:128.6,2027:129.1,2028:128.7,2029:128.4,2030:128.3},gf:{2026:0.8,2027:0.6,2028:0.7,2029:0.7,2030:0.7},cf:{2026:2.0,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[0.4,0.6,0.6,0.66,0.68],wcf:[2.4,1.8,2.1,2.04,2.02]},
+ {cc:'ES',n:'Spain',         rtg:16.33,net:84.6, pol:63.20,cb_gdp:27.2,gdp_i:2.0,gdp_o:2.1,cpi_i:2.0,cpi_o:3.0,cpi_l:2.0,gdp_l:1.6,
+  y2:2.72,y5:2.96,y10:3.47,y30:4.15, s2:2.8197,s5:2.87,s10:3.0494,s30:3.12,ccy:'EUR',
+  nf:{2026:84.6,2027:83.3,2028:82.5,2029:81.5,2030:80.4},gf:{2026:2.0,2027:1.7,2028:1.6,2029:1.6,2030:1.6},cf:{2026:2.0,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[1.76,1.54,1.54,1.58,1.59],wcf:[3.08,3.2,2.27,2.11,2.05]},
+ {cc:'PT',n:'Portugal',      rtg:16.33,net:82.6, pol:72.96,cb_gdp:28.1,gdp_i:2.1,gdp_o:null,cpi_i:2.1,cpi_o:null,cpi_l:2.0,gdp_l:1.7,
+  y2:2.65,y5:2.89,y10:3.41,y30:4.00, s2:2.8197,s5:2.87,s10:3.0494,s30:3.12,ccy:'EUR',
+  nf:{2026:82.6,2027:79.8,2028:77.5,2029:75.6,2030:73.7},gf:{2026:2.1,2027:1.5,2028:1.6,2029:1.6,2030:1.7},cf:{2026:2.1,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[1.86,1.34,1.54,1.58,1.69],wcf:[3.18,2.9,2.27,2.11,2.05]},
+ {cc:'NL',n:'Netherlands',   rtg:21.00,net:37.3, pol:90.93,cb_gdp:16.2,gdp_i:1.2,gdp_o:null,cpi_i:2.4,cpi_o:null,cpi_l:2.0,gdp_l:1.2,
+  y2:2.65,y5:2.78,y10:3.13,y30:3.51, s2:2.8197,s5:2.87,s10:3.0494,s30:3.12,ccy:'EUR',
+  nf:{2026:37.3,2027:37.7,2028:38.2,2029:39.1,2030:40.0},gf:{2026:1.2,2027:1.4,2028:1.4,2029:1.3,2030:1.2},cf:{2026:2.4,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[1.0,1.27,1.35,1.28,1.19],wcf:[3.3,2.98,2.23,2.09,2.04]},
+ {cc:'AT',n:'Austria',       rtg:20.33,net:65.6, pol:78.90,cb_gdp:20.3,gdp_i:0.8,gdp_o:null,cpi_i:2.3,cpi_o:null,cpi_l:2.1,gdp_l:0.7,
+  y2:2.66,y5:2.88,y10:3.30,y30:3.83, s2:2.8197,s5:2.87,s10:3.0494,s30:3.12,ccy:'EUR',
+  nf:{2026:65.6,2027:66.4,2028:67.3,2029:68.1,2030:69.0},gf:{2026:0.8,2027:1.6,2028:1.3,2029:1.0,2030:0.7},cf:{2026:2.3,2027:2.1,2028:2.1,2029:2.1,2030:2.1},
+  wgf:[0.6,1.47,1.25,0.98,0.69],wcf:[3.2,2.79,2.33,2.19,2.15]},
+ {cc:'BE',n:'Belgium',       rtg:19.00,net:97.7, pol:82.05,cb_gdp:21.1,gdp_i:1.0,gdp_o:null,cpi_i:1.3,cpi_o:null,cpi_l:1.9,gdp_l:1.3,
+  y2:2.72,y5:3.01,y10:3.56,y30:4.34, s2:2.8197,s5:2.87,s10:3.0494,s30:3.12,ccy:'EUR',
+  nf:{2026:97.7,2027:100.8,2028:104.2,2029:107.8,2030:111.2},gf:{2026:1.0,2027:1.3,2028:1.2,2029:1.3,2030:1.3},cf:{2026:1.3,2027:1.9,2028:1.9,2029:1.9,2030:1.9},
+  wgf:[0.8,1.17,1.15,1.28,1.29],wcf:[2.2,2.48,2.12,1.99,1.94]},
+ {cc:'FI',n:'Finland',       rtg:20.33,net:45.4, pol:93.20,cb_gdp:20.7,gdp_i:1.3,gdp_o:null,cpi_i:1.9,cpi_o:null,cpi_l:2.0,gdp_l:1.2,
+  y2:2.66,y5:2.88,y10:3.28,y30:3.88, s2:2.8197,s5:2.87,s10:3.0494,s30:3.12,ccy:'EUR',
+  nf:{2026:45.4,2027:47.6,2028:49.5,2029:51.4,2030:53.0},gf:{2026:1.3,2027:1.3,2028:1.3,2029:1.2,2030:1.2},cf:{2026:1.9,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[1.1,1.17,1.25,1.18,1.19],wcf:[2.8,2.58,2.23,2.09,2.04]},
+ {cc:'NO',n:'Norway',        rtg:21.00,net:-168.3,pol:93.50,cb_gdp:0.0,gdp_i:1.6,gdp_o:null,cpi_i:2.4,cpi_o:null,cpi_l:2.0,gdp_l:1.3,
+  y2:4.44,y5:4.35,y10:4.32,y30:null, s2:4.8777,s5:4.541,s10:4.3885,s30:null,ccy:'NOK',
+  nf:{2026:-168.3,2027:-173,2028:-177.5,2029:-181.6,2030:-184.8},gf:{2026:1.6,2027:1.6,2028:1.3,2029:1.3,2030:1.3},cf:{2026:2.4,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[1.66,1.64,1.31,1.31,1.3],wcf:[2.13,1.82,1.93,1.97,1.99]},
+ {cc:'SE',n:'Sweden',        rtg:21.00,net:14.2, pol:92.46,cb_gdp:0.9,gdp_i:1.9,gdp_o:null,cpi_i:1.6,cpi_o:null,cpi_l:2.0,gdp_l:1.7,
+  y2:2.44,y5:2.61,y10:2.90,y30:null, s2:2.7159,s5:2.895,s10:3.117,s30:null,ccy:'SEK',
+  nf:{2026:14.2,2027:15.2,2028:15.4,2029:15.3,2030:15.0},gf:{2026:1.9,2027:1.8,2028:1.7,2029:1.7,2030:1.7},cf:{2026:1.6,2027:1.9,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[1.82,1.75,1.68,1.69,1.7],wcf:[1.96,2.13,2.09,2.04,2.02]},
+ {cc:'JP',n:'Japan',         rtg:16.33,net:128.9,pol:29.99,cb_gdp:86.6,gdp_i:0.6,gdp_o:0.9,cpi_i:2.1,cpi_o:2.4,cpi_l:2.0,gdp_l:0.5,
+  y2:1.38,y5:1.80,y10:2.38,y30:3.67, s2:1.361,s5:1.7575,s10:2.1787,s30:3.0313,ccy:'JPY',
+  nf:{2026:128.9,2027:128,2028:128,2029:128.6,2030:129.9},gf:{2026:0.6,2027:0.6,2028:0.6,2029:0.5,2030:0.5},cf:{2026:2.1,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[0.9,0.9,0.67,0.53,0.52],wcf:[2.4,1.9,2.08,2.03,2.02]},
+ {cc:'CA',n:'Canada',        rtg:20.67,net:14.1, pol:84.82,cb_gdp:9.9,gdp_i:1.5,gdp_o:1.2,cpi_i:2.0,cpi_o:2.4,cpi_l:1.9,gdp_l:1.6,
+  y2:2.81,y5:3.08,y10:3.48,y30:3.91, s2:2.719,s5:2.9,s10:3.235,s30:3.575,ccy:'CAD',
+  nf:{2026:14.1,2027:14.7,2028:15.5,2029:15.8,2030:15.9},gf:{2026:1.5,2027:1.9,2028:1.7,2029:1.7,2030:1.6},cf:{2026:2.0,2027:2.0,2028:2.0,2029:1.9,2030:1.9},
+  wgf:[1.2,1.7,1.62,1.67,1.59],wcf:[2.4,2.0,2.1,1.94,1.92]},
+ {cc:'AU',n:'Australia',     rtg:21.00,net:32.4, pol:93.22,cb_gdp:7.8,gdp_i:2.1,gdp_o:2.3,cpi_i:3.0,cpi_o:4.1,cpi_l:2.5,gdp_l:2.3,
+  y2:4.74,y5:4.77,y10:5.04,y30:5.42, s2:4.7044,s5:4.724,s10:4.918,s30:4.912,ccy:'AUD',
+  nf:{2026:32.4,2027:32.0,2028:31.6,2029:31.4,2030:30.9},gf:{2026:2.1,2027:2.2,2028:2.2,2029:2.2,2030:2.3},cf:{2026:3.0,2027:2.6,2028:2.5,2029:2.5,2030:2.5},
+  wgf:[2.3,2.4,2.25,2.22,2.31],wcf:[4.1,2.5,2.77,2.61,2.56]},
+ {cc:'NZ',n:'New Zealand',   rtg:20.33,net:25.4, pol:94.22,cb_gdp:7.0,gdp_i:2.2,gdp_o:null,cpi_i:2.1,cpi_o:null,cpi_l:2.0,gdp_l:2.2,
+  y2:3.54,y5:4.23,y10:4.74,y30:5.35, s2:3.4325,s5:3.965,s10:4.3425,s30:null,ccy:'NZD',
+  nf:{2026:25.4,2027:26.7,2028:26.8,2029:25.9,2030:24.6},gf:{2026:2.2,2027:2.4,2028:2.3,2029:2.2,2030:2.2},cf:{2026:2.1,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[2.08,2.32,2.27,2.19,2.19],wcf:[2.7,2.39,2.15,2.06,2.03]},
+ {cc:'GR',n:'Greece',        rtg:12.67,net:141.9,pol:46.05,cb_gdp:15.7,gdp_i:2.0,gdp_o:null,cpi_i:2.5,cpi_o:null,cpi_l:2.0,gdp_l:1.6,
+  y2:2.77,y5:3.13,y10:3.79,y30:4.42, s2:2.8197,s5:2.87,s10:3.0494,s30:3.12,ccy:'EUR',
+  nf:{2026:141.9,2027:138.1,2028:135.6,2029:132.9,2030:130.2},gf:{2026:2.0,2027:1.5,2028:1.6,2029:1.6,2030:1.6},cf:{2026:2.5,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[1.74,1.33,1.54,1.57,1.59],wcf:[3.67,3.36,2.39,2.12,2.06]},
+ {cc:'IE',n:'Ireland',       rtg:19.67,net:24.4, pol:91.82,cb_gdp:21.3,gdp_i:1.3,gdp_o:null,cpi_i:1.7,cpi_o:null,cpi_l:2.0,gdp_l:2.3,
+  y2:2.62,y5:2.76,y10:3.23,y30:3.71, s2:2.8197,s5:2.87,s10:3.0494,s30:3.12,ccy:'EUR',
+  nf:{2026:24.4,2027:24.1,2028:23.5,2029:22.8,2030:22.3},gf:{2026:1.3,2027:2.5,2028:2.4,2029:2.3,2030:2.3},cf:{2026:1.7,2027:1.8,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[1.2,2.44,2.38,2.29,2.29],wcf:[2.15,2.09,2.11,2.04,2.02]},
+ {cc:'DK',n:'Denmark',       rtg:21.00,net:-4.3, pol:93.71,cb_gdp:0.0,gdp_i:2.2,gdp_o:null,cpi_i:2.1,cpi_o:null,cpi_l:2.0,gdp_l:1.5,
+  y2:2.26,y5:2.55,y10:2.85,y30:3.16, s2:2.8758,s5:3.0689,s10:3.2178,s30:3.3382,ccy:'DKK',
+  nf:{2026:-4.3,2027:-4.1,2028:-3.7,2029:-3.2,2030:-2.5},gf:{2026:2.2,2027:1.6,2028:1.5,2029:1.5,2030:1.5},cf:{2026:2.1,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[2.04,1.5,1.46,1.48,1.49],wcf:[2.82,2.47,2.18,2.07,2.04]},
+ {cc:'CH',n:'Switzerland',   rtg:21.00,net:15.7, pol:88.55,cb_gdp:0.0,gdp_i:1.3,gdp_o:null,cpi_i:0.6,cpi_o:null,cpi_l:0.7,gdp_l:1.8,
+  y2:0.08,y5:0.18,y10:0.36,y30:0.50, s2:0.1855,s5:0.33,s10:0.5585,s30:0.808,ccy:'CHF',
+  nf:{2026:15.7,2027:14.9,2028:13.9,2029:13.2,2030:12.3},gf:{2026:1.3,2027:1.1,2028:1.8,2029:1.2,2030:1.8},cf:{2026:0.6,2027:0.7,2028:0.7,2029:0.7,2030:0.7},
+  wgf:[1.26,1.07,1.79,1.2,1.8],wcf:[0.78,0.82,0.74,0.72,0.71]},
+ {cc:'KR',n:'South Korea',   rtg:19.33,net:10.3, pol:87.10,cb_gdp:1.5,gdp_i:1.8,gdp_o:1.7,cpi_i:1.8,cpi_o:2.7,cpi_l:2.0,gdp_l:1.9,
+  y2:3.40,y5:3.69,y10:3.81,y30:3.71, s2:3.225,s5:3.4025,s10:3.405,s30:2.7675,ccy:'KRW',
+  nf:{2026:10.3,2027:10.9,2028:11.6,2029:12.3,2030:12.9},gf:{2026:1.8,2027:2.2,2028:2.2,2029:2.0,2030:1.9},cf:{2026:1.8,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[1.7,2.1,2.18,1.99,1.9],wcf:[2.7,2.0,2.23,2.09,2.04]},
+ {cc:'SG',n:'Singapore',     rtg:21.00,net:null, pol:95.11,cb_gdp:null,gdp_i:1.8,gdp_o:null,cpi_i:1.3,cpi_o:null,cpi_l:2.0,gdp_l:2.5,
+  y2:1.54,y5:1.86,y10:2.22,y30:2.35, s2:1.565,s5:2.0025,s10:2.3165,s30:2.437,ccy:'SGD',
+  nf:{},gf:{2026:1.8,2027:2.5,2028:2.5,2029:2.5,2030:2.5},cf:{2026:1.3,2027:1.9,2028:2.0,2029:2.0,2030:2.0},
+  wgf:[1.64,2.4,2.46,2.48,2.49],wcf:[2.02,2.37,2.18,2.07,2.04]},
+ {cc:'CN',n:'China',         rtg:16.33,net:null, pol:46.59,cb_gdp:2.1,gdp_i:4.2,gdp_o:4.4,cpi_i:0.7,cpi_o:1.3,cpi_l:2.0,gdp_l:3.4,
+  y2:1.29,y5:1.53,y10:1.82,y30:2.37, s2:1.5075,s5:1.615,s10:1.77,s30:null,ccy:'CNY',
+  nf:{},gf:{2026:4.2,2027:4.2,2028:4.0,2029:3.7,2030:3.4},cf:{2026:0.7,2027:1.4,2028:1.8,2029:1.9,2030:2.0},
+  wgf:[4.4,4.3,4.05,3.72,3.41],wcf:[1.3,1.1,1.95,1.96,2.03]},
+];
+
+const COL={US:'#4fa8f5',UK:'#25c97e',DE:'#ffb038',FR:'#9b7ce8',IT:'#ff5252',
+  ES:'#fb923c',PT:'#a78bfa',NL:'#22d3ee',AT:'#4ade80',BE:'#e879f9',
+  FI:'#fbbf24',SE:'#86efac',JP:'#f472b6',CA:'#67e8f9',AU:'#fcd34d',
+  NZ:'#a5f3fc',GR:'#c084fc',IE:'#6ee7b7',DK:'#93c5fd',CH:'#d4d4d8',
+  KR:'#fdba74',SG:'#5eead4',CN:'#f9a8d4',NO:'#fb7185'};
+
+const R2={'2Y':'0.182','5Y':'0.452','10Y':'0.766','30Y':'0.793'};
+
+// state — see above
+const charts={};
+
+function gy(d,t){return t==='2Y'?d.y2:t==='5Y'?d.y5:t==='10Y'?d.y10:d.y30;}
+function gs(d,t){return t==='2Y'?d.s2:t==='5Y'?d.s5:t==='10Y'?d.s10:d.s30;}
+function dc(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
+
+function sopts(xl,yl){return{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2333',titleColor:'#ffb038',bodyColor:'#e8f0f7',borderColor:'#1e2b3c',borderWidth:1,
+    callbacks:{label:ctx=>`${ctx.dataset.label}: mkt=${ctx.parsed.y.toFixed(3)}%  fv=${ctx.parsed.x.toFixed(3)}%`}}},
+  scales:{x:{grid:{color:'rgba(30,43,60,0.7)'},ticks:{color:'#7fb3cc',font:{family:"'Space Mono'",size:8}},title:{display:true,text:xl,color:'#7fb3cc',font:{size:8}}},
+    y:{grid:{color:'rgba(30,43,60,0.7)'},ticks:{color:'#7fb3cc',font:{family:"'Space Mono'",size:8}},title:{display:true,text:yl,color:'#7fb3cc',font:{size:8}}}}}}
+
+function soptsFit(allPts,xl,yl){
+  const base=sopts(xl,yl);
+  base.plugins.legend={display:false};
+  base.plugins.tooltip={
+    backgroundColor:'#1a2333',titleColor:'#ffb038',bodyColor:'#e8f0f7',
+    borderColor:'#1e2b3c',borderWidth:1,
+    callbacks:{label:function(ctx){
+      var raw=ctx.dataset.label||'';
+      var cc=raw.replace('*','');
+      var p=allPts.find(function(q){return q.cc===cc;});
+      if(!p)return raw;
+      var fvStr=p.fy!=null?p.fy.toFixed(3)+'%':'n/a';
+      var exStr=p.excl?' (excl)':'';
+      return p.cc+exStr+': mkt='+p.my.toFixed(3)+'%  fv='+fvStr;
+    }}
+  };
+  return base;
+}
+
+
+// ─── STATE ───────────────────────────────────────────────
+let optA='10Y', optB='10Y', optC='10Y', bench='DE', infM='blend';
+const fitMode={A:'linear',B:'linear',C:'linear'};
+const excluded={A:new Set(),B:new Set(),C:new Set()};
+
+// ─── EXCLUSION PANEL LOGIC ────────────────────────────────
+const EUR_BLOC=new Set(['DE','FR','IT','ES','PT','NL','AT','BE','FI','GR','IE','DK']);
+
+function buildExclPanel(opt){
+  const el=document.getElementById('ctags-'+opt);
+  if(!el)return;
+  el.innerHTML=D.map(d=>{
+    const on=!excluded[opt].has(d.cc);
+    return`<span class="ctag ${on?'inc':'exc'}" style="border-color:${on?COL[d.cc]+'66':'rgba(255,82,82,0.3)'};${on?'color:'+COL[d.cc]:'color:var(--rd)'}" onclick="toggleCC('${opt}','${d.cc}')" title="${d.n}">${d.cc}</span>`;
+  }).join('');
+  updateExclMeta(opt);
+}
+
+function toggleCC(opt,cc){
+  if(excluded[opt].has(cc)) excluded[opt].delete(cc);
+  else excluded[opt].add(cc);
+  buildExclPanel(opt);
+  if(opt==='A')rA();else if(opt==='B')rB();else rC();
+}
+
+function inclAll(opt){excluded[opt].clear();buildExclPanel(opt);if(opt==='A')rA();else if(opt==='B')rB();else rC();}
+function exclG10Only(opt){
+  excluded[opt].clear();
+  D.forEach(d=>{if(!EUR_BLOC.has(d.cc))excluded[opt].add(d.cc);});
+  buildExclPanel(opt);
+  if(opt==='A')rA();else if(opt==='B')rB();else rC();
+}
+
+function updateExclMeta(opt){
+  const el=document.getElementById('excl-meta-'+opt);
+  if(el){const n=D.length-excluded[opt].size;el.textContent=`${n} of ${D.length} countries in model · ${excluded[opt].size} excluded`;}
+}
+
+function setFit(opt,mode){
+  fitMode[opt]=mode;
+  document.getElementById('fit'+opt+'-lin').classList.toggle('on',mode==='linear');
+  document.getElementById('fit'+opt+'-pol').classList.toggle('on',mode==='poly2');
+  if(opt==='A')rA();else if(opt==='B')rB();else rC();
+}
+
+// ─── REGRESSION HELPERS ───────────────────────────────────
+// OLS via normal equations in pure JS
+// For linear: y = a + b*x
+// For poly2:  y = a + b*x + c*x²
+// Uses Gaussian elimination for 3×3 system
+
+function linReg(xs,ys){
+  const n=xs.length;
+  if(n<2)return{pred:x=>0,r2:0,label:'n<2'};
+  let sx=0,sy=0,sxx=0,sxy=0;
+  for(let i=0;i<n;i++){sx+=xs[i];sy+=ys[i];sxx+=xs[i]*xs[i];sxy+=xs[i]*ys[i];}
+  const det=n*sxx-sx*sx;
+  if(Math.abs(det)<1e-12)return{pred:x=>sy/n,r2:0,label:'singular'};
+  const b=(n*sxy-sx*sy)/det;
+  const a=(sy-b*sx)/n;
+  const ymean=sy/n;
+  let sst=0,sse=0;
+  for(let i=0;i<n;i++){sst+=(ys[i]-ymean)**2;sse+=(ys[i]-(a+b*xs[i]))**2;}
+  const r2=1-sse/sst;
+  return{pred:x=>a+b*x,r2,label:`R²=${r2.toFixed(3)}`};
+}
+
+function polyReg2(xs,ys){
+  // Build X'X and X'y for [1, x, x²]
+  const n=xs.length;
+  if(n<3)return linReg(xs,ys);
+  let s0=n,s1=0,s2=0,s3=0,s4=0,t0=0,t1=0,t2=0;
+  for(let i=0;i<n;i++){
+    const x=xs[i],x2=x*x,y=ys[i];
+    s1+=x;s2+=x2;s3+=x2*x;s4+=x2*x2;t0+=y;t1+=x*y;t2+=x2*y;
+  }
+  // Gaussian elimination on 3x3 augmented matrix [[s0,s1,s2,t0],[s1,s2,s3,t1],[s2,s3,s4,t2]]
+  let M=[[s0,s1,s2,t0],[s1,s2,s3,t1],[s2,s3,s4,t2]];
+  // Forward elimination
+  for(let col=0;col<3;col++){
+    let maxR=col;
+    for(let r=col+1;r<3;r++)if(Math.abs(M[r][col])>Math.abs(M[maxR][col]))maxR=r;
+    [M[col],M[maxR]]=[M[maxR],M[col]];
+    if(Math.abs(M[col][col])<1e-12)return linReg(xs,ys);
+    for(let r=col+1;r<3;r++){
+      const f=M[r][col]/M[col][col];
+      for(let c=col;c<=3;c++)M[r][c]-=f*M[col][c];
+    }
+  }
+  // Back substitution
+  const coef=[0,0,0];
+  for(let r=2;r>=0;r--){
+    let s=M[r][3];
+    for(let c=r+1;c<3;c++)s-=M[r][c]*coef[c];
+    coef[r]=s/M[r][r];
+  }
+  const [a,b,c]=coef;
+  const ymean=ys.reduce((s,y)=>s+y,0)/n;
+  let sst=0,sse=0;
+  for(let i=0;i<n;i++){sst+=(ys[i]-ymean)**2;sse+=(ys[i]-(a+b*xs[i]+c*xs[i]**2))**2;}
+  const r2=1-sse/sst;
+  // Guard against overfitting: if poly R² < linear R² or n < 5, fall back
+  const lr=linReg(xs,ys);
+  if(r2<lr.r2-0.001&&n<5)return lr;
+  return{pred:x=>a+b*x+c*x*x,r2,label:`R²=${r2.toFixed(3)} (quad)`};
+}
+
+function fitLine(xs,ys,mode){
+  return mode==='poly2'?polyReg2(xs,ys):linReg(xs,ys);
+}
+
+// Generate smooth curve points for chart overlay
+function curvePts(reg,mn,mx,n=60){
+  const pts=[];
+  for(let i=0;i<=n;i++){const x=mn+(mx-mn)*i/n;pts.push({x,y:reg.pred(x)});}
+  return pts;
+}
+
+function updateFitInfo(opt,r2label,n){
+  const el=document.getElementById('fit-info-'+opt);
+  if(el)el.innerHTML=`n=${n} countries &nbsp;|&nbsp; <b>${r2label}</b>`;
+}
+
+// ─── OPTION A ──────────────────────────────────────────────────────
+function rA(){
+  buildExclPanel('A');
+  const t=optA;
+  const allPts=D.filter(d=>gy(d,t)!=null&&gs(d,t)!=null).map(d=>{
+    const my=gy(d,t),sw=gs(d,t);
+    const fa=d.net!=null?asw(d,t):null;
+    const fy=fa!=null?sw+fa/100:null;
+    const ac=(my-sw)*100;
+    const rs=fy!=null?(my-fy)*100:null;
+    return{cc:d.cc,n:d.n,my,sw,ac,fa,fy,rs,col:COL[d.cc]||'#888',ccy:d.ccy,excl:excluded.A.has(d.cc)};
+  });
+  const pts=allPts; // all points shown, excluded ones greyed
+  const wr=pts.filter(p=>p.rs!=null&&!p.excl); // only included in regression
+  const ar=wr.reduce((s,p)=>s+p.rs,0)/wr.length;
+  const mx=Math.max(...wr.map(p=>p.rs)),mn=Math.min(...wr.map(p=>p.rs));
+  const mxp=wr.find(p=>p.rs===mx),mnp=wr.find(p=>p.rs===mn);
+  document.getElementById('kA').innerHTML=[
+    {l:'Tenor',v:t,s:'Selected',c:'cy'},{l:'Countries',v:pts.length,s:'with swap data',c:''},
+    {l:'Avg Residual',v:(ar>0?'+':'')+ar.toFixed(1)+'bp',s:'Mean FV gap',c:ar>0?'rd':'gr'},
+    {l:'Cheapest',v:mxp?.cc||'—',s:mx.toFixed(0)+'bp',c:'rd'},
+    {l:'Richest',v:mnp?.cc||'—',s:mn.toFixed(0)+'bp',c:'gr'},
+    {l:'Cheap(>10bp)',v:wr.filter(p=>p.rs>10).length,s:'countries',c:'am'},
+  ].map(k=>`<div class="kpi"><div class="kl">${k.l}</div><div class="kv ${k.c}">${k.v}</div><div class="ks">${k.s}</div></div>`).join('');
+
+  // Fit regression on included points: market yield vs FV yield
+  const incPts=wr.filter(p=>p.fy);
+  const exPts=allPts.filter(p=>p.fy&&p.excl);
+  const xs=incPts.map(p=>p.fy),ys=incPts.map(p=>p.my);
+  const reg=fitLine(xs,ys,fitMode.A);
+  const lo=Math.min(...allPts.filter(p=>p.fy).flatMap(p=>[p.my,p.fy]))-0.2;
+  const hi=Math.max(...allPts.filter(p=>p.fy).flatMap(p=>[p.my,p.fy]))+0.2;
+  updateFitInfo('A',reg.label,incPts.length);
+  document.getElementById('a-r2').textContent=`n=${incPts.length} · ${reg.label} · ASW model Adj R²=${R2[t]}`;
+  dc('chA1');
+  charts.chA1=new Chart(document.getElementById('chA1'),{type:'scatter',data:{datasets:[
+    {label:'45°',type:'line',data:[{x:lo,y:lo},{x:hi,y:hi}],borderColor:'rgba(0,212,255,0.18)',borderDash:[4,4],pointRadius:0,borderWidth:1},
+    {label:'Fit',type:'line',data:curvePts(reg,lo,hi),borderColor:'rgba(255,176,56,0.8)',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,tension:0},
+    ...incPts.map(p=>({label:p.cc,data:[{x:p.fy,y:p.my}],backgroundColor:p.col+'cc',borderColor:p.col,pointRadius:8,pointHoverRadius:10})),
+    ...exPts.map(p=>({label:p.cc+'*',data:[{x:p.fy,y:p.my}],backgroundColor:'#33333388',borderColor:'#555',pointRadius:6,pointHoverRadius:8}))
+  ]},options:soptsFit(allPts,'Fair Value Yield (%)','Market Yield (%)')});
+
+  // Show all points in table; excluded ones show greyed
+  const allSorted=[...allPts.filter(p=>p.fy!=null)].sort((a,b)=>(b.rs||0)-(a.rs||0));
+  const ma=Math.max(...wr.filter(p=>p.rs!=null).map(p=>Math.abs(p.rs)),1);
+  document.getElementById('tbA').innerHTML=allSorted.map(p=>{
+    const excl=p.excl;
+    const pos=(p.rs||0)>0,pct=Math.min(100,Math.abs(p.rs||0)/ma*75);
+    const sv=excl?'Excl':Math.abs(p.rs||0)>10?pos?'Cheap':'Rich':'Fair';
+    const sc=excl?'sf':sv==='Cheap'?'sc':sv==='Rich'?'sr':'sf';
+    const rowStyle=excl?'opacity:0.4;':'';
+    return`<tr style="${rowStyle}"><td><span class="cc" style="border:1px solid ${COL[p.cc]||'#888'}44">${p.cc}</span><span class="nm">${p.n}</span></td>
+    <td>${p.my.toFixed(3)}%</td><td>${p.fy?.toFixed(3)||'—'}%</td>
+    <td style="color:var(--tx2)">${p.sw.toFixed(4)}% <span style="font-size:7px;color:var(--tx2)">(${p.ccy})</span></td>
+    <td>${excl?'<span style="color:var(--tx2);font-size:9px">excluded</span>':`<div class="rw"><div class="rb ${pos?'rbp':'rbn'}" style="width:${pct}%"></div>
+      <span class="rv ${pos?'rvp':'rvn'}">${(pos?'+':'')+p.rs.toFixed(1)}bp</span></div>`}</td>
+    <td><span class="sig ${sc}">${sv}</span></td></tr>`;
+  }).join('');
+
+  const top9=[...allSorted].sort((a,b)=>b.my-a.my).slice(0,9);
+  document.getElementById('dcA').innerHTML=top9.map(p=>{
+    const tot=Math.abs(p.my);
+    const swP=(p.sw/tot)*100;
+    const asP=(Math.abs(p.ac)/100/tot)*100;
+    return`<div class="dc"><div class="dcc">${p.cc}</div><div class="dcn" style="color:var(--tx2)">${p.n}</div>
+    <div style="font-size:8px;color:var(--tx2);margin-bottom:4px">Yield: <b style="color:#fff">${p.my.toFixed(2)}%</b> · ASW: <span style="color:${p.ac>0?'var(--rd)':'var(--gr)'}">${(p.ac>0?'+':'')+p.ac.toFixed(0)}bp</span></div>
+    <div class="dst"><div class="ds" style="width:${Math.min(swP,95)}%;background:${COL[p.cc]||'#888'}88">${p.sw.toFixed(2)}</div>
+    <div class="ds" style="width:${Math.min(asP,30)}%;background:${p.ac>0?'var(--rd)':'var(--gr)'}99">${p.ac.toFixed(0)}</div></div>
+    <div class="dl"><span class="dli"><span class="dld" style="background:${COL[p.cc]||'#888'}88"></span>Swap(${p.ccy})</span>
+    <span class="dli"><span class="dld" style="background:${p.ac>0?'var(--rd)':'var(--gr)'}"></span>ASW</span></div></div>`;
+  }).join('');
+
+  document.getElementById('ntA').innerHTML=`<b>Option A:</b> Fair value yield = local OIS/swap rate + ASW model output. The swap rate anchors the risk-free rate in each currency — the model adds credit, fiscal and political risk. 
+  <span class="wa">UK: systematic ~7bp GBP swap/gilt basis (LDI demand + repo scarcity) — not a mispricing, a structural technical.</span>
+  <span class="fl">KRW corrected: now uses KOFR OIS (PDF primary data). KR 2Y ASW flips from −9bp to +18bp; 30Y widens from +57bp to +94bp — reflecting genuine KTB long-end cheapness.</span>
+  Norway excluded from regression (net debt −168%, sovereign wealth fund distortion).`;
+}
+
+// ─── OPTION B ──────────────────────────────────────────────────────
+function rB(){
+  buildExclPanel('B');
+  const t=optB;
+  const bd=D.find(d=>d.cc===bench);
+  const by=gy(bd,t);
+  if(!by){document.getElementById('tbB').innerHTML='<tr><td colspan="6" style="color:var(--tx2);text-align:center;padding:16px">No data for this tenor/benchmark combination</td></tr>';return;}
+  const baseFVAsw=bd.net!=null?asw(bd,t):0;
+  const allPts=D.filter(d=>d.cc!==bench&&gy(d,t)!=null).map(d=>{
+    const my=gy(d,t),sp=(my-by)*100;
+    const da=d.net!=null?asw(d,t)-baseFVAsw:null;
+    const di=(d.cpi_i-bd.cpi_i)*100;
+    const dg=(d.gdp_i-bd.gdp_i)*(-50);
+    const fvs=da!=null?da+di+dg:null;
+    const rs=fvs!=null?sp-fvs:null;
+    return{cc:d.cc,n:d.n,my,sp,da,di,dg,fvs,rs,col:COL[d.cc]||'#888',excl:excluded.B.has(d.cc)};
+  });
+  const pts=allPts;
+  const wr=pts.filter(p=>p.rs!=null&&isFinite(p.rs)&&!p.excl);
+  const ar=wr.reduce((s,p)=>s+p.rs,0)/wr.length;
+  document.getElementById('b-lbl').textContent=`vs ${bd.n} (${bench})`;
+  document.getElementById('kB').innerHTML=[
+    {l:'Benchmark',v:bench,s:bd.n,c:'cy'},
+    {l:'Bench Yield',v:by.toFixed(2)+'%',s:`${t}`,c:'am'},
+    {l:'Avg Spread',v:(pts.reduce((s,p)=>s+p.sp,0)/pts.length).toFixed(0)+'bp',s:'Cross-country',c:''},
+    {l:'Avg Resid',v:(ar>0?'+':'')+ar.toFixed(0)+'bp',s:'vs FV spread',c:ar>0?'rd':'gr'},
+    {l:'Widest',v:[...pts].sort((a,b)=>b.sp-a.sp)[0]?.cc,s:[...pts].sort((a,b)=>b.sp-a.sp)[0]?.sp.toFixed(0)+'bp',c:'rd'},
+    {l:'Tightest',v:[...pts].sort((a,b)=>a.sp-b.sp)[0]?.cc,s:[...pts].sort((a,b)=>a.sp-b.sp)[0]?.sp.toFixed(0)+'bp',c:'gr'},
+  ].map(k=>`<div class="kpi"><div class="kl">${k.l}</div><div class="kv ${k.c}">${k.v||'—'}</div><div class="ks">${k.s}</div></div>`).join('');
+
+  // Fit line: market spread vs FV spread for included countries
+  const incB=wr.filter(p=>p.fvs!=null);
+  const regB=fitLine(incB.map(p=>p.fvs),incB.map(p=>p.sp),fitMode.B);
+  updateFitInfo('B',regB.label,incB.length);
+  const sr=[...allPts].sort((a,b)=>b.sp-a.sp);
+  dc('chB1');
+  charts.chB1=new Chart(document.getElementById('chB1'),{type:'bar',
+    data:{labels:sr.map(p=>p.cc),datasets:[
+      {label:'Market Spread',data:sr.map(p=>p.sp),
+        backgroundColor:sr.map(p=>p.excl?'#33333355':p.col+'88'),
+        borderColor:sr.map(p=>p.excl?'#555':p.col),borderWidth:1,borderRadius:2},
+      {label:'FV Spread',data:sr.map(p=>p.fvs),type:'line',
+        borderColor:'rgba(0,212,255,0.7)',backgroundColor:'transparent',borderWidth:1.5,
+        pointRadius:sr.map(p=>p.excl?3:4),
+        pointBackgroundColor:sr.map(p=>p.excl?'#555':'var(--cy)')}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{color:'#a8c0d1',font:{family:"'Space Mono'",size:8},boxWidth:8}},
+        tooltip:{backgroundColor:'#1a2333',titleColor:'#ffb038',bodyColor:'#e8f0f7',borderColor:'#1e2b3c',borderWidth:1,
+          callbacks:{label:ctx=>{const p=sr[ctx.dataIndex];return p?`${p.cc}${p.excl?' (excl)':''}: ${ctx.formattedValue}bp`:ctx.formattedValue;}}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#a8c0d1',font:{family:"'Space Mono'",size:8}}},
+        y:{grid:{color:'rgba(30,43,60,0.7)'},ticks:{color:'#7fb3cc',font:{family:"'Space Mono'",size:8}},
+          title:{display:true,text:`Spread vs ${bench} (bp)`,color:'#7fb3cc',font:{size:8}}}}}});
+
+  const allBSorted=[...allPts.filter(p=>p.fvs!=null)].sort((a,b)=>(b.rs||0)-(a.rs||0));
+  const maB=Math.max(...wr.filter(p=>p.rs!=null).map(p=>Math.abs(p.rs)),1);
+  document.getElementById('tbB').innerHTML=allBSorted.map(p=>{
+    const excl=p.excl;
+    const pos=(p.rs||0)>0,pct=Math.min(100,Math.abs(p.rs||0)/maB*70);
+    const sv=excl?'Excl':Math.abs(p.rs||0)>20?pos?'Cheap':'Rich':'Fair';
+    const sc=excl?'sf':sv==='Cheap'?'sc':sv==='Rich'?'sr':'sf';
+    return`<tr style="${excl?'opacity:0.4;':''}"><td><span class="cc">${p.cc}</span><span class="nm">${p.n}</span></td>
+    <td>${p.sp.toFixed(0)}bp</td><td>${p.fvs!=null?p.fvs.toFixed(0)+'bp':'—'}</td>
+    <td style="color:var(--cy)">${p.da!=null?(p.da>0?'+':'')+p.da.toFixed(0)+'bp':'—'}</td>
+    <td>${excl?'<span style="color:var(--tx2);font-size:9px">excluded</span>':`<div class="rw"><div class="rb ${pos?'rbp':'rbn'}" style="width:${pct}%"></div>
+      <span class="rv ${pos?'rvp':'rvn'}">${(pos?'+':'')+p.rs.toFixed(0)}bp</span></div>`}</td>
+    <td><span class="sig ${sc}">${sv}</span></td></tr>`;
+  }).join('');
+
+  document.getElementById('ntB').innerHTML=`<b>Option B — Spread vs ${bd.n}:</b> FV spread = ΔASW (regression model) + Δinflation (1bp per bp) + Δgrowth (−50bp per 1pp). Captures OAT-Bund, BTP-Bund, Gilt-UST dynamics. Toggle benchmark above.
+  <span class="wa">The growth and inflation coefficients here are simplified proxies — Option C provides a structurally cleaner three-layer decomposition with IMF/OECD forecasts.</span>`;
+}
+
+// ─── OPTION C ──────────────────────────────────────────────────────
+function rC(){
+  buildExclPanel('C');
+  const t=optC;
+
+  // ── Tenor-specific Fisher decomposition ─────────────────────────
+  // 2Y: r*(OECD 2026 GDP) + π*(OECD 2026 CPI) + 0×TP
+  //     Pure expectations — no term premium (ACM: TP_2Y≈0, inflation risk≈0)
+  //     r* = neutral policy rate proxy at 2Y horizon = current-year growth
+  // 5Y-IMF: r*(avg IMF 2026-28) + π*(avg IMF 2026-28) + 0.35×TP_10Y
+  //     Medium-term, pre-war baseline
+  // 5Y-WAR: r*(avg WAR-ADJ 2026-28) + π*(avg WAR-ADJ 2026-28) + 0.35×TP_10Y
+  //     War-adjusted: OECD 2026-27 + Hamilton/Baumeister decay extrapolation
+  // 10Y: r*(IMF LR GDP) + π*(IMF LR CPI) + full TP (ASW model) [unchanged]
+  // 30Y: r*(IMF LR GDP) + π*(IMF LR CPI) + full TP (ASW model) [unchanged]
+
+  // Averaging helpers
+  function avgN(arr,n){if(!arr)return null;const v=Array.isArray(arr)?arr:Object.values(arr);return v.slice(0,n).reduce((s,x)=>s+x,0)/Math.min(n,v.length);}
+  function avg2(arr){return avgN(arr,2);}   // 2026-2027 (2Y window)
+  function avg5(arr){return avgN(arr,5);}   // 2026-2030 (full 5Y window)
+
+  // ── Tenor-specific r* (neutral real rate proxy) ──────────────────
+  // 2Y-spot:  OECD 2026 only  — point-in-time neutral rate at 2Y horizon
+  // 2Y-avg:   avg OECD 2026-2027 — expectations over full 2Y holding period
+  // 5Y-IMF:   avg IMF 2026-2030  — full 5Y window, pre-war baseline
+  // 5Y-WAR:   avg war-adj 2026-2030 — OECD+decay extrapolation, full 5Y window
+  // 10Y/30Y:  IMF long-run structural r* (Laubach-Williams)
+  function getRstar(d){
+    if(t==='2Y-spot') return d.gdp_o??d.gdp_i;
+    if(t==='2Y-avg')  return avg2(d.gf?Object.values(d.gf):null)!=null
+                             ? ((d.gdp_o??d.gdp_i) + (d.gf?Object.values(d.gf)[1]:d.gdp_i))/2
+                             : d.gdp_o??d.gdp_i;
+    if(t==='5Y-IMF')  return avg5(d.gf?Object.values(d.gf):null)??d.gdp_i;
+    if(t==='5Y-WAR')  return d.wgf?avg5(d.wgf):avg5(d.gf?Object.values(d.gf):null)??d.gdp_i;
+    return d.gdp_l;
+  }
+  // ── Tenor-specific π* (inflation expectation) ────────────────────
+  function getPi(d){
+    if(t==='2Y-spot') return d.cpi_o??d.cpi_i;
+    if(t==='2Y-avg')  return ((d.cpi_o??d.cpi_i) + (d.cf?Object.values(d.cf)[1]:d.cpi_i))/2;
+    if(t==='5Y-IMF')  return avg5(d.cf?Object.values(d.cf):null)??d.cpi_i;
+    if(t==='5Y-WAR')  return d.wcf?avg5(d.wcf):avg5(d.cf?Object.values(d.cf):null)??d.cpi_i;
+    return d.cpi_l;
+  }
+  // ── Tenor-specific term premium ──────────────────────────────────
+  function getTP(d){
+    if(t==='2Y-spot'||t==='2Y-avg') return 0;  // ACM: TP_2Y≈0
+    if(t==='5Y-IMF'||t==='5Y-WAR') return d.net!=null?asw(d,'10Y')*0.35/100:null; // ACM 0.35 scaling
+    return d.net!=null?asw(d,t==='30Y'?'30Y':'10Y')/100:null;
+  }
+  // Map display tenor to data tenor for yield lookup
+  const dataTenor=(t==='2Y-spot'||t==='2Y-avg')?'2Y':(t==='5Y-IMF'||t==='5Y-WAR')?'5Y':t;
+
+  const allPts=D.filter(d=>gy(d,dataTenor)!=null).map(d=>{
+    const my=gy(d,dataTenor);
+    const rs=getRstar(d), pi_=getPi(d), tp=getTP(d);
+    const fy=(tp!=null)?rs+pi_+tp:rs+pi_;
+    const res=(my-fy)*100;
+    return{cc:d.cc,n:d.n,my,rs,pi:pi_,tp,fy,res,col:COL[d.cc]||'#888',nf:d.nf,gf:d.gf,cf:d.cf,excl:excluded.C.has(d.cc)};
+  });
+  const pts=allPts;
+  const wr=pts.filter(p=>p.res!=null&&isFinite(p.res)&&!p.excl);
+  const ar=wr.reduce((s,p)=>s+p.res,0)/wr.length;
+  const sc={'blend':'Blended (OECD 2Y/5Y · IMF 10Y/30Y)','oecd':'OECD Mar 2026 (Iran shock)','imf':'IMF WEO long-run'}[infM];
+  const tenorLabels={
+    '2Y-spot':'2Y (spot) · r*(OECD 2026) + π*(OECD 2026) · TP=0',
+    '2Y-avg' :'2Y (avg) · avg[r*+π*] OECD 2026-2027 · TP=0',
+    '5Y-IMF' :'5Y (IMF) · avg[r*+π*] IMF 2026-2030 + 0.35×TP₁₀Y',
+    '5Y-WAR' :'5Y (War-adj) · avg[r*+π*] war-adj 2026-2030 + 0.35×TP₁₀Y',
+    '10Y'    :'10Y · r*(IMF LR) + π*(IMF LR) + Full TP',
+    '30Y'    :'30Y · r*(IMF LR) + π*(IMF LR) + Full TP + GDP growth',
+  };
+  document.getElementById('c-sc').textContent=tenorLabels[t]||t;
+
+  const tpLabel=(t==='2Y-spot'||t==='2Y-avg')?'None (≈0)':t.startsWith('5Y')?'0.35×TP₁₀Y':'Full ASW model';
+  const r_src=t==='2Y-spot'?'OECD 2026 only':t==='2Y-avg'?'OECD avg 2026-27':t==='5Y-IMF'?'IMF avg 2026-30':t==='5Y-WAR'?'War-adj avg 2026-30':'IMF long-run';
+  document.getElementById('kC').innerHTML=[
+    {l:'Tenor',v:t,s:'Selected formula',c:'cy'},
+    {l:'r* Source',v:r_src,s:'Growth proxy',c:''},
+    {l:'Avg r*',v:wr.length?(wr.reduce((s,p)=>s+p.rs,0)/wr.length).toFixed(2)+'%':'—',s:'Cross-country avg',c:''},
+    {l:'Avg π*',v:wr.length?(wr.reduce((s,p)=>s+p.pi,0)/wr.length).toFixed(2)+'%':'—',s:'Inflation exp.',c:'am'},
+    {l:'Term Premium',v:tpLabel,s:'Academic basis: ACM',c:'pu'},
+    {l:'Avg Resid',v:(ar>0?'+':'')+ar.toFixed(1)+'bp',s:'Fisher gap vs market',c:ar>0?'rd':'gr'},
+  ].map(k=>`<div class="kpi"><div class="kl">${k.l}</div><div class="kv ${k.c}">${k.v||'—'}</div><div class="ks">${k.s}</div></div>`).join('');
+
+  const incC=wr.filter(p=>p.fy);
+  const exC=allPts.filter(p=>p.fy&&p.excl);
+  const allFY=allPts.filter(p=>p.fy);
+  const regC=fitLine(incC.map(p=>p.fy),incC.map(p=>p.my),fitMode.C);
+  updateFitInfo('C',regC.label,incC.length);
+  const lo=Math.min(...allFY.flatMap(p=>[p.my,p.fy]))-0.2;
+  const hi=Math.max(...allFY.flatMap(p=>[p.my,p.fy]))+0.2;
+  dc('chC1');
+  charts.chC1=new Chart(document.getElementById('chC1'),{type:'scatter',data:{datasets:[
+    {label:'45°',type:'line',data:[{x:lo,y:lo},{x:hi,y:hi}],borderColor:'rgba(155,124,232,0.18)',borderDash:[4,4],pointRadius:0,borderWidth:1},
+    {label:'Fit',type:'line',data:curvePts(regC,lo,hi),borderColor:'rgba(255,176,56,0.85)',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,tension:0},
+    ...incC.map(p=>({label:p.cc,data:[{x:p.fy,y:p.my}],backgroundColor:p.col+'cc',borderColor:p.col,pointRadius:8,pointHoverRadius:10})),
+    ...exC.map(p=>({label:p.cc+'*',data:[{x:p.fy,y:p.my}],backgroundColor:'#33333388',borderColor:'#555',pointRadius:6,pointHoverRadius:8}))
+  ]},options:soptsFit(allPts,'Fisher FV = r* + π* + TP (%)','Market Yield (%)')});
+
+  const allCSorted=[...allPts.filter(p=>p.fy!=null)].sort((a,b)=>(b.res||0)-(a.res||0));
+  document.getElementById('tbC').innerHTML=allCSorted.map(p=>{
+    const excl=p.excl;
+    const pos=(p.res??0)>0;
+    return`<tr style="${excl?'opacity:0.4;':''}"><td><span class="cc">${p.cc}</span>${excl?'<span style="font-size:8px;color:var(--rd);margin-left:3px">excl</span>':''}</td>
+    <td>${p.my.toFixed(2)}%</td>
+    <td style="color:var(--cy)">${p.rs.toFixed(1)}%</td>
+    <td style="color:var(--am)">${p.pi.toFixed(1)}%</td>
+    <td style="color:var(--pu)">${p.tp!=null?(p.tp*100>0?'+':'')+( p.tp*100).toFixed(0)+'bp':'—'}</td>
+    <td style="color:#fff;font-weight:600">${p.fy!=null?p.fy.toFixed(2)+'%':'—'}</td>
+    <td class="${pos?'rvp':'rvn'}" style="font-weight:600">${p.res!=null?(pos?'+':'')+p.res.toFixed(0)+'bp':'—'}</td></tr>`;
+  }).join('');
+
+  // Forward chart
+  const FCC=['IT','FR','US','UK','GR','DE','JP','BE','ES','AU'];
+  const YRS=[2026,2027,2028,2029,2030];
+  const fdd=D.filter(d=>FCC.includes(d.cc)&&d.gf&&d.cf);
+  dc('chFwd');
+  charts.chFwd=new Chart(document.getElementById('chFwd'),{type:'line',
+    data:{labels:YRS.map(String),datasets:fdd.map(d=>{
+      const pts2=YRS.map(yr=>{
+        const nd=d.nf[yr]??d.net;const gv=d.gf[yr]??d.gdp_l;const cv=d.cf[yr]??d.cpi_l;
+        const df2={...d,net:nd,gdp_i:gv};const tp2=nd!=null?asw(df2,t)/100:null;
+        return tp2!=null?gv+cv+tp2:null;
+      });
+      return{label:d.cc,data:pts2,borderColor:COL[d.cc]||'#888',backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:0.3};
+    })},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{color:'#a8c0d1',font:{family:"'Space Mono'",size:8},boxWidth:8}},
+        tooltip:{backgroundColor:'#1a2333',titleColor:'#ffb038',bodyColor:'#e8f0f7',borderColor:'#1e2b3c',borderWidth:1,
+          callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y!=null?ctx.parsed.y.toFixed(2)+'%':'—'}`}}},
+      scales:{x:{grid:{color:'rgba(30,43,60,0.5)'},ticks:{color:'#a8c0d1',font:{family:"'Space Mono'",size:8}}},
+        y:{grid:{color:'rgba(30,43,60,0.7)'},ticks:{color:'#7fb3cc',font:{family:"'Space Mono'",size:8}},
+          title:{display:true,text:`Fisher FV Yield ${t} (%)`,color:'#7fb3cc',font:{size:8}}}}}});
+
+  document.getElementById('fcds').innerHTML=fdd.map(d=>{
+    const nd0=d.nf[2026]??d.net,nd4=d.nf[2030]??d.net;
+    const dF0={...d,net:nd0,gdp_i:d.gf[2026]??d.gdp_l};
+    const dF4={...d,net:nd4,gdp_i:d.gf[2030]??d.gdp_l};
+    const tp0=nd0!=null?asw(dF0,t)/100:null,tp4=nd4!=null?asw(dF4,t)/100:null;
+    const fv0=tp0!=null?(d.gf[2026]??d.gdp_l)+(d.cf[2026]??d.cpi_l)+tp0:null;
+    const fv4=tp4!=null?(d.gf[2030]??d.gdp_l)+(d.cf[2030]??d.cpi_l)+tp4:null;
+    const ch=fv0&&fv4?fv4-fv0:null;
+    return`<div class="fc"><div class="fcc">${d.cc}</div><div class="fcn" style="color:var(--tx2)">${d.n}</div>
+    <div class="fcr"><span class="fck">FV 2026</span><span class="fcv">${fv0!=null?fv0.toFixed(2)+'%':'—'}</span></div>
+    <div class="fcr"><span class="fck">FV 2030</span><span class="fcv">${fv4!=null?fv4.toFixed(2)+'%':'—'}</span></div>
+    <div class="fcr"><span class="fck">Δ</span><span class="fcv ${ch!=null?(ch>0?'up':'dn'):''}">${ch!=null?(ch>0?'+':'')+ch.toFixed(2)+'%':'—'}</span></div>
+    </div>`;
+  }).join('');
+
+  function getCnote(t){
+    if(t==='2Y-spot') return '<b>2Y spot (OECD 2026 only):</b> r* = OECD 2026 GDP. pi* = OECD 2026 CPI. TP=0. Uses only the current year forecast — captures the near-term war shock precisely but ignores the 2027 mean-reversion path.';
+    if(t==='2Y-avg')  return '<b>2Y avg (OECD 2026-2027):</b> r* = avg(OECD 2026, 2027 GDP). pi* = avg(OECD 2026, 2027 CPI). TP=0. Theoretically more correct — the 2Y yield under the expectations hypothesis equals the average expected short rate over the full 2-year holding period. The 2027 OECD figure captures the CB policy response to the war shock, so pi* falls from the 2026 peak. Compare with 2Y-spot to see how much of the current market 2Y yield is about the 2026 shock vs the full 2-year path.';
+    if(t==='2Y') return '<b>2Y Fisher — Pure Expectations:</b> r* = OECD 2026 GDP growth (policy rate proxy). pi* = OECD 2026 CPI (war-adjusted, Iran shock). TP=0 — ACM shows TP_2Y ~0; inflation risk ~0 at 2Y (Haubrich et al. 2012). Residual = market 2Y minus fundamental FV = CB credibility or political gap. <span class="wa">Purely fundamental — no market inputs. Positive residual = market prices 2Y above fundamentals (CB behind curve or political risk premium).</span>';
+    if(t==='5Y-IMF') return '<b>5Y Fisher (IMF pre-war baseline):</b> r* = avg IMF 2026-28 GDP. pi* = avg IMF 2026-28 CPI. TP = 0.35 x TP_10Y (ACM empirical scaling, TP_5Y/TP_10Y ~0.35-0.45). Clean pre-war anchor. <span class="wa">IMF forecasts do not reflect the Iran conflict. Use 5Y War-adj alongside this — the gap between the two quantifies the war premium on 5Y yields.</span>';
+    if(t==='5Y-WAR') return '<b>5Y Fisher (War-adjusted — temporary bridge):</b> r* = war-adj avg 2026-28 (OECD 2026-27 actual + Hamilton/Baumeister decay extrapolation to 2028). pi* = same. TP = 0.35 x TP_10Y. Decay profile: 100% shock in 2026, 65% in 2027, 25% in 2028, 10% in 2029. <span class="wa">TEMPORARY until next IMF WEO (~2 weeks). Energy importers (US +38bp, UK +51bp, DE +62bp higher FV) vs exporters (NO, CN smaller delta). The war premium = 5Y-WAR minus 5Y-IMF.</span>';
+    if(t==='10Y') return '<b>10Y Fisher — Full Structural:</b> r* = IMF long-run GDP (Laubach-Williams neutral). pi* = IMF long-run CPI. TP = full ASW model (rating + net debt + political risk, Adj R2=0.766, all significant at 1%). This is the cleanest tenor for fundamental pricing.';
+    return '<b>30Y Fisher — Long-run Solvency:</b> r* = IMF long-run GDP. pi* = IMF long-run CPI. TP = full ASW model including GDP growth (r-g dynamics). Convexity premium (~15-25bp) not currently modelled.';
+  }
+  document.getElementById('ntC').innerHTML=getCnote(t);
+}
+
+
+// ══════════════════════════════════════════════════════════
+// OPTION D — COUNTRY DEEP DIVE
+// ══════════════════════════════════════════════════════════
+
+let selCC = 'US';
+const EUR_BENCH = new Set(['DE','FR','IT','ES','PT','NL','AT','BE','FI','GR','IE','DK',
+                           'NO','SE','CH']); // use DE as benchmark
+const TENORS_D = ['2Y','5Y','10Y','30Y'];
+const FLAGS = {US:'🇺🇸',UK:'🇬🇧',DE:'🇩🇪',FR:'🇫🇷',IT:'🇮🇹',ES:'🇪🇸',PT:'🇵🇹',
+  NL:'🇳🇱',AT:'🇦🇹',BE:'🇧🇪',FI:'🇫🇮',NO:'🇳🇴',SE:'🇸🇪',JP:'🇯🇵',CA:'🇨🇦',
+  AU:'🇦🇺',NZ:'🇳🇿',GR:'🇬🇷',IE:'🇮🇪',DK:'🇩🇰',CH:'🇨🇭',KR:'🇰🇷',SG:'🇸🇬',CN:'🇨🇳'};
+
+const RATING_LABELS = {21:'AAA',20:'AA+',19:'AA',18:'AA-',17:'A+',16:'A',15:'A-',
+  14:'BBB+',13:'BBB',12:'BBB-'};
+function ratingLabel(r){const k=Math.round(r);return RATING_LABELS[k]||r.toFixed(1);}
+
+// ── Compute all fair values for one country across all tenors ─────────────────
+function computeFV(d) {
+  const benchCC = EUR_BENCH.has(d.cc) ? 'DE' : 'US';
+  const bd = D.find(x => x.cc === benchCC);
+  const out = {};
+
+  TENORS_D.forEach(t => {
+    const mkt = gy(d, t);
+    const sw  = gs(d, t);
+    if (mkt == null) { out[t] = null; return; }
+
+    // ── Option A: swap + ASW model ──────────────────────────────────
+    const aswA = d.net != null ? asw(d, t) / 100 : null;
+    const fvA  = sw != null && aswA != null ? sw + aswA : null;
+
+    // ── Option B: spread vs benchmark, convert back to yield ─────────
+    const by = gy(bd, t);
+    let fvB = null;
+    if (by != null && bd.net != null && d.net != null) {
+      const baseFVAsw = asw(bd, t);
+      const dAsw  = asw(d, t) - baseFVAsw;           // bp
+      const dInfl = (d.cpi_i - bd.cpi_i) * 100;       // bp
+      const dGdp  = (d.gdp_i - bd.gdp_i) * (-50);     // bp
+      const fvSpread = dAsw + dInfl + dGdp;            // bp
+      fvB = by + fvSpread / 100;                       // convert to yield
+    }
+
+    // ── Option C helpers (per-tenor Fisher) ──────────────────────────
+    function cFV(rstar, pi, tpScale) {
+      const tp = tpScale === 0 ? 0
+               : d.net != null ? asw(d, t === '30Y' ? '30Y' : '10Y') * tpScale / 100
+               : null;
+      return tp != null ? rstar + pi + tp : rstar + pi;
+    }
+
+    // 2Y-spot: OECD 2026 only, TP=0
+    const fvC2spot = t === '2Y'
+      ? cFV(d.gdp_o ?? d.gdp_i, d.cpi_o ?? d.cpi_i, 0) : null;
+
+    // 2Y-avg: avg OECD 2026+2027, TP=0
+    const gdp27 = d.gf ? Object.values(d.gf)[1] : d.gdp_i;
+    const cpi27 = d.cf ? Object.values(d.cf)[1] : d.cpi_i;
+    const fvC2avg = t === '2Y'
+      ? cFV(((d.gdp_o ?? d.gdp_i) + gdp27) / 2,
+             ((d.cpi_o ?? d.cpi_i) + cpi27) / 2, 0) : null;
+
+    // 5Y-IMF: avg IMF 2026-2030, TP=0.35×TP10Y
+    function avg5v(arr){ if(!arr)return null; const v=Array.isArray(arr)?arr:Object.values(arr); return v.slice(0,5).reduce((s,x)=>s+x,0)/Math.min(5,v.length); }
+    const fvC5imf = t === '5Y'
+      ? cFV(avg5v(d.gf ? Object.values(d.gf) : null) ?? d.gdp_i,
+             avg5v(d.cf ? Object.values(d.cf) : null) ?? d.cpi_i, 0.35) : null;
+
+    // 5Y-WAR: avg war-adj 2026-2030, TP=0.35×TP10Y
+    const fvC5war = t === '5Y'
+      ? cFV(d.wgf ? avg5v(d.wgf) : avg5v(d.gf ? Object.values(d.gf) : null) ?? d.gdp_i,
+             d.wcf ? avg5v(d.wcf) : avg5v(d.cf ? Object.values(d.cf) : null) ?? d.cpi_i, 0.35) : null;
+
+    // 10Y/30Y: IMF LR, full TP
+    const fvC10 = (t === '10Y' || t === '30Y')
+      ? cFV(d.gdp_l, d.cpi_l, 1) : null;
+
+    // ── Residuals (bp) ───────────────────────────────────────────────
+    const resA   = fvA  != null ? (mkt - fvA)  * 100 : null;
+    const resB   = fvB  != null ? (mkt - fvB)  * 100 : null;
+    const resC_w = (fvC2avg ?? fvC5war ?? fvC10) != null
+                   ? (mkt - (fvC2avg ?? fvC5war ?? fvC10)) * 100 : null;
+    const resC_i = (fvC2spot ?? fvC5imf ?? fvC10) != null
+                   ? (mkt - (fvC2spot ?? fvC5imf ?? fvC10)) * 100 : null;
+
+    // ── Fisher decomposition (war-adj, for stacked chart) ────────────
+    let rStar, piStar, tpBp;
+    if (t === '2Y') {
+      rStar  = ((d.gdp_o ?? d.gdp_i) + gdp27) / 2;
+      piStar = ((d.cpi_o ?? d.cpi_i) + cpi27) / 2;
+      tpBp   = 0;
+    } else if (t === '5Y') {
+      rStar  = d.wgf ? avg5v(d.wgf) : avg5v(d.gf ? Object.values(d.gf) : null) ?? d.gdp_i;
+      piStar = d.wcf ? avg5v(d.wcf) : avg5v(d.cf ? Object.values(d.cf) : null) ?? d.cpi_i;
+      tpBp   = d.net != null ? asw(d, '10Y') * 0.35 : 0;
+    } else {
+      rStar  = d.gdp_l;
+      piStar = d.cpi_l;
+      tpBp   = d.net != null ? asw(d, t === '30Y' ? '30Y' : '10Y') : 0;
+    }
+
+    out[t] = { mkt, sw, fvA, fvB, fvC2spot, fvC2avg, fvC5imf, fvC5war, fvC10,
+               resA, resB, resC_w, resC_i, rStar, piStar, tpBp, benchCC };
+  });
+  return out;
+}
+
+// ── Build selector pills ──────────────────────────────────────────────────────
+function buildSelector() {
+  const el = document.getElementById('cc-selector');
+  if(!el) return;
+  el.innerHTML = D.map(d =>
+    `<span class="cc-pill${d.cc===selCC?' active':''}"
+      style="${d.cc===selCC?'background:'+COL[d.cc]+';border-color:'+COL[d.cc]:
+             'border-color:'+COL[d.cc]+'55;color:'+COL[d.cc]}"
+      onclick="selectCC('${d.cc}')">${FLAGS[d.cc]||''} ${d.cc}</span>`
+  ).join('');
+}
+
+function selectCC(cc) { selCC = cc; window.curveVis=null; buildSelector(); renderD(); }
+
+// ── Main render ───────────────────────────────────────────────────────────────
+function renderD() {
+  const d = D.find(x => x.cc === selCC);
+  if (!d) return;
+  const fv = computeFV(d);
+  const col = COL[d.cc] || '#888';
+
+  // Hero — compute signals first, then write hero + signals together
+  const allResids = TENORS_D.flatMap(function(t){ return fv[t] ?
+    [fv[t].resA, fv[t].resB, fv[t].resC_w].filter(function(v){return v!=null;}) : []; });
+  const avgResid = allResids.length ? allResids.reduce(function(s,v){return s+v;},0)/allResids.length : 0;
+  const agree = allResids.every(function(v){return v>5;}) ? 'ALL MODELS: CHEAP' :
+                allResids.every(function(v){return v<-5;}) ? 'ALL MODELS: RICH' :
+                Math.abs(avgResid) < 5 ? 'BROADLY FAIR' : 'MIXED SIGNALS';
+  const agreeCls = allResids.every(function(v){return v>5;}) ? 'st-cheap' :
+                   allResids.every(function(v){return v<-5;}) ? 'st-rich' :
+                   Math.abs(avgResid)<5 ? 'st-fair' : 'conv-agree';
+  const signalHTML = '<span class="signal-tag '+agreeCls+'">'+agree+'</span>'
+    +' <span class="signal-tag st-fair">Avg residual: '+(avgResid>0?'+':'')+avgResid.toFixed(1)+'bp</span>'
+    +' <span class="signal-tag st-fair">Bench: '+(fv['10Y']?fv['10Y'].benchCC:'DE')+'</span>';
+
+  const heroEl = document.getElementById('country-hero');
+  if(heroEl) heroEl.innerHTML =
+    '<div class="hero-flag" style="background:'+col+'22;border-color:'+col+'44">'
+    +'<span>'+(FLAGS[d.cc]||d.cc)+'</span></div>'
+    +'<div class="hero-info">'
+    +'<div class="hero-name" style="color:'+col+'">'+d.n+'</div>'
+    +'<div class="hero-sub">'+d.ccy+' swap curve &middot; Benchmark: '+(fv['10Y']?fv['10Y'].benchCC:'DE')+'</div>'
+    +'<div class="signal-row">'+signalHTML+'</div>'
+    +'</div>';
+
+  // KPIs
+  const notches = {21:'AAA',20:'AA+',19:'AA',18:'AA-',17:'A+',16:'A',15:'A-',14:'BBB+',13:'BBB',12:'BBB-'};
+  var kdEl=document.getElementById('kD');if(kdEl)kdEl.innerHTML = [
+    {l:'Rating',    v:notches[Math.round(d.rtg)]||d.rtg.toFixed(1), s:'Composite avg', c:'am'},
+    {l:'Net Debt',  v:(d.net??'N/A')+(d.net!=null?'% GDP':''),      s:'IMF 2026',      c:d.net>100?'rd':d.net>60?'am':'gr'},
+    {l:'Pol Risk',  v:d.pol.toFixed(1),                              s:'0=worst 100=best',c:d.pol>80?'gr':d.pol>50?'am':'rd'},
+    {l:'CB Holdings',v:(d.cb_gdp??'N/A')+(d.cb_gdp!=null?'% GDP':''),s:'QE distortion',c:''},
+    {l:'r* (LR)',   v:d.gdp_l+'%',                                   s:'IMF structural', c:'cy'},
+    {l:'π* (LR)',   v:d.cpi_l+'%',                                   s:'IMF long-run',   c:'am'},
+  ].map(k=>`<div class="kpi"><div class="kl">${k.l}</div><div class="kv ${k.c}">${k.v}</div><div class="ks">${k.s}</div></div>`).join('');
+
+  // Model legend
+  var mlEl=document.getElementById('model-legend');if(mlEl)mlEl.innerHTML = `
+    <div class="ml-item"><div class="ml-line" style="background:${col};height:3px"></div>Market Yield</div>
+    <div class="ml-item"><div class="ml-line ml-dash" style="color:var(--cy)"></div>Option A (Swap+ASW)</div>
+    <div class="ml-item"><div class="ml-line ml-dash" style="color:var(--am)"></div>Option B (vs Benchmark)</div>
+    <div class="ml-item"><div class="ml-line ml-dash" style="color:var(--pu)"></div>Option C War-adj</div>
+    <div class="ml-item"><div class="ml-line" style="background:var(--pu);opacity:0.45;height:1px;border-top:1px dashed var(--pu)"></div>Option C IMF baseline</div>`;
+  var dnEl=document.getElementById('d-country-name');if(dnEl)dnEl.textContent = d.n;
+
+  // ── Chart 1: Yield curve vs FV ────────────────────────────────────
+  const labels = TENORS_D.filter(t => fv[t]);
+  const mktYields  = labels.map(t => fv[t]?.mkt);
+  const fvAYields  = labels.map(t => fv[t]?.fvA);
+  const fvBYields  = labels.map(t => fv[t]?.fvB);
+  // C war-adj: 2Y→2Y-avg, 5Y→5Y-war, 10Y/30Y→fvC10
+  // Four C lines: avg×{war,imf} and spot×{war,imf}
+  const fvCavgWar = labels.map(function(t){ return fv[t]?(fv[t].fvC2avg??fv[t].fvC5war??fv[t].fvC10):null; });
+  const fvCavgImf = labels.map(function(t){ return fv[t]?(fv[t].fvC2avg??fv[t].fvC5imf??fv[t].fvC10):null; });
+  const fvCsptWar = labels.map(function(t){ return fv[t]?(fv[t].fvC2spot??fv[t].fvC5war??fv[t].fvC10):null; });
+  const fvCsptImf = labels.map(function(t){ return fv[t]?(fv[t].fvC2spot??fv[t].fvC5imf??fv[t].fvC10):null; });
+
+  // ── Curve dataset definitions with high-contrast colours ────────
+  // C-war: [2Y→2Y-avg, 5Y→5Y-WAR, 10Y→structural, 30Y→structural]
+  // C-imf: [2Y→2Y-spot, 5Y→5Y-IMF, 10Y→structural, 30Y→structural]
+  // Labels spell out exactly what each point represents
+  var benchLbl = EUR_BENCH.has(d.cc) ? 'Bund' : 'UST';
+
+  var curveDatasets = [
+    { key:'mkt',       label:'Market Yield',
+      data:mktYields,  borderColor:col, backgroundColor:col+'18',
+      borderWidth:3, pointRadius:6, pointHoverRadius:8, tension:0.25, fill:false, borderDash:[] },
+    { key:'optA',      label:'A: Swap + ASW model',
+      data:fvAYields,  borderColor:'#00eeff', backgroundColor:'transparent',
+      borderWidth:2, pointRadius:4, pointHoverRadius:7, tension:0.25, fill:false, borderDash:[7,4] },
+    { key:'optB',      label:'B: Spread vs '+benchLbl,
+      data:fvBYields,  borderColor:'#ffee00', backgroundColor:'transparent',
+      borderWidth:2, pointRadius:4, pointHoverRadius:7, tension:0.25, fill:false, borderDash:[7,4] },
+    { key:'cAvgWar',   label:'C: 2Y-avg · 5Y-WAR',
+      data:fvCavgWar,  borderColor:'#ee77ff', backgroundColor:'transparent',
+      borderWidth:2, pointRadius:4, pointHoverRadius:7, tension:0.25, fill:false, borderDash:[7,4] },
+    { key:'cAvgImf',   label:'C: 2Y-avg · 5Y-IMF',
+      data:fvCavgImf,  borderColor:'#aa55dd', backgroundColor:'transparent',
+      borderWidth:2, pointRadius:4, pointHoverRadius:7, tension:0.25, fill:false, borderDash:[3,6] },
+    { key:'cSptWar',   label:'C: 2Y-spot · 5Y-WAR',
+      data:fvCsptWar,  borderColor:'#ff99bb', backgroundColor:'transparent',
+      borderWidth:2, pointRadius:4, pointHoverRadius:7, tension:0.25, fill:false, borderDash:[7,4] },
+    { key:'cSptImf',   label:'C: 2Y-spot · 5Y-IMF',
+      data:fvCsptImf,  borderColor:'#cc6688', backgroundColor:'transparent',
+      borderWidth:2, pointRadius:4, pointHoverRadius:7, tension:0.25, fill:false, borderDash:[3,6] },
+  ];
+
+  // Always reset curveVis on each render so no line stays permanently hidden
+  // User can re-toggle after; state persists within a session via window.curveVis
+  if(!window.curveVis) window.curveVis={mkt:true,optA:true,optB:true,cAvgWar:true,cAvgImf:true,cSptWar:true,cSptImf:true};
+  // Ensure all keys exist (new keys added since last init)
+  curveDatasets.forEach(function(ds){ if(window.curveVis[ds.key]===undefined) window.curveVis[ds.key]=true; });
+
+  // Build toggle buttons
+  var tgEl=document.getElementById('curve-toggles');
+  if(tgEl){
+    tgEl.innerHTML=curveDatasets.map(function(ds){
+      var on=window.curveVis[ds.key]!==false;
+      var lineStyle=ds.borderDash&&ds.borderDash.length>0
+        ?'background:repeating-linear-gradient(90deg,'+ds.borderColor+' 0,'+ds.borderColor+' 6px,transparent 6px,transparent 10px)'
+        :'background:'+ds.borderColor;
+      return '<button class="ctg'+(on?'':' off')+'" id="ctg-'+ds.key+'" data-key="'+ds.key+'">'
+        +'<span class="ctg-line" style="'+lineStyle+'"></span>'+ds.label+'</button>';
+    }).join('');
+    // Attach click handlers after innerHTML is set
+    tgEl.querySelectorAll('.ctg').forEach(function(btn){
+      btn.addEventListener('click',function(){toggleCurve(btn.getAttribute('data-key'));});
+    });
+  }
+
+  // Apply visibility to datasets
+  var visibleDatasets=curveDatasets.filter(function(ds){return window.curveVis[ds.key]!==false;});
+
+  dc('chD1');
+  var cvD1=document.getElementById('chD1');if(!cvD1)return;
+  charts.chD1 = new Chart(cvD1, {
+    type: 'line',
+    data: { labels:labels, datasets:visibleDatasets },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#1a2333',bodyColor:'#e8f0f7',
+          borderColor:'#1e2b3c',borderWidth:1,
+          callbacks:{
+          title:function(items){
+            var t=labels[items[0].dataIndex];
+            var subtitles={'2Y':'2Y: C-war=2Y-avg, C-imf=2Y-spot',
+                           '5Y':'5Y: C-war=5Y-WAR, C-imf=5Y-IMF',
+                           '10Y':'10Y: all C lines = structural LR',
+                           '30Y':'30Y: all C lines = structural LR'};
+            return t+(subtitles[t]?' — '+subtitles[t]:'');
+          },
+          label:function(ctx){
+            var v=ctx.parsed.y;
+            var ti=labels[ctx.dataIndex];
+            if(v==null)return null;
+            var mkt=fv[ti]?fv[ti].mkt:null;
+            var diff=mkt!=null&&ctx.dataset.key!=='mkt'?((mkt-v)*100):null;
+            return ctx.dataset.label+': '+v.toFixed(3)+'%'
+              +(diff!=null?'  ('+(diff>0?'+':'')+diff.toFixed(0)+'bp vs mkt)':'');
+          }},
+          titleColor:col
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(30,43,60,0.6)'},
+           ticks:{color:'#a8c0d1',font:{family:"'Space Mono'",size:9}}},
+        y:{grid:{color:'rgba(30,43,60,0.7)'},
+           ticks:{color:'#7fb3cc',font:{family:"'Space Mono'",size:9}},
+           title:{display:true,text:'Yield (%)',color:'#7fb3cc',font:{size:9}}}
+      }
+    }
+  });
+
+  // ── Chart 2: Fisher decomposition stacked bar ─────────────────────
+  const dLabels  = labels;
+  const rStars   = labels.map(t => fv[t]?.rStar);
+  const piStars  = labels.map(t => fv[t]?.piStar);
+  const tpVals   = labels.map(t => fv[t]?.tpBp != null ? fv[t].tpBp / 100 : 0);
+
+  dc('chD2');
+  var cvD2=document.getElementById('chD2');if(!cvD2)return;
+  charts.chD2 = new Chart(cvD2, {
+    type: 'bar',
+    data: { labels: dLabels, datasets: [
+      { label:'r* (neutral rate)', data:rStars,  backgroundColor:'rgba(0,212,255,0.55)', stack:'s' },
+      { label:'π* (inflation)',    data:piStars,  backgroundColor:'rgba(255,176,56,0.65)', stack:'s' },
+      { label:'TP (term premium)', data:tpVals,   backgroundColor:'rgba(155,124,232,0.65)', stack:'s' },
+      { label:'Market yield', data:mktYields, type:'line', borderColor:col,
+        borderWidth:2, pointRadius:6, pointStyle:'circle',
+        pointBackgroundColor:col, fill:false, order:0 },
+    ]},
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:true,labels:{color:'#a8c0d1',font:{family:"'Space Mono'",size:8},boxWidth:10}},
+        tooltip:{backgroundColor:'#1a2333',bodyColor:'#e8f0f7',borderColor:'#1e2b3c',borderWidth:1}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#a8c0d1',font:{family:"'Space Mono'",size:9}},stacked:true},
+        y:{grid:{color:'rgba(30,43,60,0.7)'},ticks:{color:'#7fb3cc',font:{family:"'Space Mono'",size:9}},
+           stacked:true,title:{display:true,text:'Yield (%)',color:'#7fb3cc',font:{size:9}}}}
+    }
+  });
+
+  // ── Chart 3: Residuals grouped bar ────────────────────────────────
+  const resAv  = labels.map(t => fv[t]?.resA  != null ? +fv[t].resA.toFixed(1)  : null);
+  const resBv  = labels.map(t => fv[t]?.resB  != null ? +fv[t].resB.toFixed(1)  : null);
+  const resCw  = labels.map(t => fv[t]?.resC_w != null ? +fv[t].resC_w.toFixed(1) : null);
+  const resCi  = labels.map(t => fv[t]?.resC_i != null ? +fv[t].resC_i.toFixed(1) : null);
+
+  function resColor(vals){ return vals.map(v=>v==null?'#333':v>0?'rgba(255,82,82,0.7)':'rgba(37,201,126,0.7)'); }
+
+  dc('chD3');
+  var cvD3=document.getElementById('chD3');if(!cvD3)return;
+  charts.chD3 = new Chart(cvD3, {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'A (Swap+ASW)', data:resAv, backgroundColor:resColor(resAv),
+        borderColor:resColor(resAv).map(c=>c.replace('0.7','1')), borderWidth:1, borderRadius:2 },
+      { label:'B (vs Bench)', data:resBv, backgroundColor:resBv.map(v=>v==null?'#333':v>0?'rgba(255,176,56,0.6)':'rgba(0,212,255,0.5)'),
+        borderWidth:1, borderRadius:2 },
+      { label:'C War-adj',    data:resCw, backgroundColor:resCw.map(v=>v==null?'#333':v>0?'rgba(155,124,232,0.7)':'rgba(155,124,232,0.4)'),
+        borderWidth:1, borderRadius:2 },
+      { label:'C IMF base',   data:resCi, backgroundColor:resCi.map(v=>v==null?'#333':v>0?'rgba(155,124,232,0.4)':'rgba(155,124,232,0.2)'),
+        borderWidth:1, borderRadius:2, borderDash:[2,2] },
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,labels:{color:'#a8c0d1',font:{family:"'Space Mono'",size:8},boxWidth:10}},
+        tooltip:{backgroundColor:'#1a2333',bodyColor:'#e8f0f7',borderColor:'#1e2b3c',borderWidth:1,
+          callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y>0?'+':''}${ctx.parsed.y}bp`}},
+        annotation:{drawTime:'afterDatasetsDraw'}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#a8c0d1',font:{family:"'Space Mono'",size:9}}},
+        y:{grid:{color:'rgba(30,43,60,0.7)'},ticks:{color:'#7fb3cc',font:{family:"'Space Mono'",size:9}},
+           title:{display:true,text:'Residual (bp)  + = cheap',color:'#7fb3cc',font:{size:9}}}
+      }
+    }
+  });
+
+  // ── Residual summary table ─────────────────────────────────────
+  function resStr(v){ return v!=null?(v>0?'+':'')+v.toFixed(0)+'bp':'—'; }
+  function resCol(v){ return v==null?'var(--tx3)':v>10?'var(--rd)':v<-10?'var(--gr)':'var(--tx2)'; }
+  var summHtml='<div class="rs-title">Residual Summary — '+d.n+' · all tenors · + = cheap (bp)</div><div class="rs-grid">';
+  labels.forEach(function(t){
+    var r=fv[t];
+    if(!r){summHtml+='<div class="rs-cell"><div class="rs-tenor">'+t+'</div><div style="color:var(--tx3)">N/A</div></div>';return;}
+    summHtml+='<div class="rs-cell"><div class="rs-tenor">'+t+'</div><div class="rs-vals">'
+      +'<div class="rs-val" style="font-size:9px;color:'+resCol(r.resA)+'">A: '+resStr(r.resA)+'</div>'
+      +'<div class="rs-val" style="font-size:9px;color:'+resCol(r.resB)+'">B: '+resStr(r.resB)+'</div>'
+      +'<div class="rs-val" style="font-size:9px;color:'+resCol(r.resC_w)+'">C⚡: '+resStr(r.resC_w)+'</div>'
+      +'<div class="rs-val" style="font-size:9px;color:'+resCol(r.resC_i)+'">C📋: '+resStr(r.resC_i)+'</div>'
+      +'</div></div>';
+  });
+  summHtml+='</div>';
+  var rsEl=document.getElementById('resid-summary');if(rsEl)rsEl.innerHTML=summHtml;
+}
+
+
+function toggleCurve(key){
+  if(!window.curveVis) window.curveVis={mkt:true,optA:true,optB:true,optCw:true,optCi:true};
+  // Don't allow hiding the market yield
+  if(key==='mkt') return;
+  window.curveVis[key] = window.curveVis[key]===false ? true : false;
+  // Re-render just Chart 1 — call renderD which rebuilds everything
+  renderD();
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────
+function setOpt(o){
+  document.querySelectorAll('.obtn').forEach((b,i)=>b.classList.toggle('on',['A','B','C','D'][i]===o));
+  document.querySelectorAll('.ocnt').forEach(c=>c.classList.remove('on'));
+  document.getElementById('opt-'+o).classList.add('on');
+  if(o==='A')rA();else if(o==='B')rB();else if(o==='C')rC();else{window.curveVis=null;buildSelector();renderD();}
+}
+function setTA(t){optA=t;document.querySelectorAll('#opt-A .tb').forEach(b=>{if(['2Y','5Y','10Y','30Y'].includes(b.textContent))b.classList.toggle('on',b.textContent===t)});rA();}
+function setTB(t){optB=t;document.querySelectorAll('#opt-B .tb').forEach(b=>{if(['2Y','5Y','10Y','30Y'].includes(b.textContent))b.classList.toggle('on',b.textContent===t)});rB();}
+function setTC(t){
+  optC=t;
+  document.querySelectorAll('#opt-C .tb').forEach(b=>{
+    const oc=b.getAttribute('onclick')||'';
+    b.classList.toggle('on', oc.includes("'"+t+"'"));
+  });
+  const notes={
+    '2Y-spot':'2Y spot · r*(OECD 2026) + π*(OECD 2026) · TP=0 · Point-in-time neutral rate only',
+    '2Y-avg' :'2Y avg · avg[r*(OECD 2026-27)] + avg[π*(OECD 2026-27)] · TP=0 · Full 2Y holding period (more rigorous)',
+    '5Y-IMF' :'5Y IMF · avg[r*(IMF 2026-30)] + avg[π*(IMF 2026-30)] + 0.35×TP₁₀Y · Pre-war baseline (full 5Y window)',
+    '5Y-WAR' :'5Y War-adj · avg[r*(war 2026-30)] + avg[π*(war 2026-30)] + 0.35×TP₁₀Y · OECD+decay over full 5Y window',
+    '10Y'    :'10Y · r*(IMF LR) + π*(IMF LR) + Full TP (ASW model, Adj R²=0.766)',
+    '30Y'    :'30Y · r*(IMF LR) + π*(IMF LR) + Full TP + GDP growth (r−g dynamics)',
+  };
+  const el=document.getElementById('tenor-note-C');
+  if(el)el.textContent=notes[t]||'';
+  rC();
+}
+function setBench(b){bench=b;document.getElementById('bDE').classList.toggle('on',b==='DE');document.getElementById('bUS').classList.toggle('on',b==='US');rB();}
+function setInf(m){infM=m;rC();} // legacy stub — Option C now uses tenor-specific formulas
+// Init exclusion panels before first render
+buildExclPanel('A');buildExclPanel('B');buildExclPanel('C');
+setTC('10Y');
+rA();
+</script>
+
+<!-- ═══ OPTION D — COUNTRY ═══ -->
+<div class="ocnt" id="opt-D">
+  <!-- Country selector pills -->
+  <div style="padding:14px 0 6px 0">
+    <div class="cc-selector" id="cc-selector"></div>
+  </div>
+
+  <!-- Hero row + KPIs -->
+  <div class="country-hero" id="country-hero"></div>
+  <div class="krow" id="kD"></div>
+
+  <!-- Chart 1: Yield curve vs fair values -->
+  <div class="panel" style="margin-bottom:12px">
+    <div class="ptit">Actual Yield Curve vs All Fair Value Models
+      <span id="d-country-name" style="color:var(--tx2)"></span>
+    </div>
+    <div style="font-size:8px;color:var(--tx3);margin-bottom:6px;font-family:var(--disp)">
+      <b style="color:#ee77ff">2Y-avg·5Y-WAR</b> &nbsp;·&nbsp;
+      <b style="color:#aa55dd">2Y-avg·5Y-IMF</b> &nbsp;·&nbsp;
+      <b style="color:#ff99bb">2Y-spot·5Y-WAR</b> &nbsp;·&nbsp;
+      <b style="color:#cc6688">2Y-spot·5Y-IMF</b> &nbsp;|&nbsp;
+      10Y/30Y all C lines identical (IMF LR structural)
+    </div>
+    <div class="curve-toggles" id="curve-toggles"></div>
+    <div class="cwrap" style="height:300px"><canvas id="chD1"></canvas></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <!-- Chart 2: Decomposition stacked bar -->
+    <div class="panel">
+      <div class="ptit">Fisher Decomposition by Tenor (War-adj)
+        <span style="color:var(--tx3)">r* + π* + TP vs market</span>
+      </div>
+      <div class="cwrap" style="height:260px"><canvas id="chD2"></canvas></div>
+    </div>
+    <!-- Chart 3: Residuals grouped bar -->
+    <div class="panel">
+      <div class="ptit">Model Residuals by Tenor (bp)
+        <span style="color:var(--tx3)">market − fair value · + = cheap</span>
+      </div>
+      <div class="cwrap" style="height:260px"><canvas id="chD3"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Residual summary table -->
+  <div class="residual-summary" id="resid-summary"></div>
+</div>
+
+</body>
+</html>

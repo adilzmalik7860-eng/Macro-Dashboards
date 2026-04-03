@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sovereign Spread Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#0d0f14;--bg2:#13161d;--bg3:#1a1e27;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8eaf0;--text2:#8b91a1;--text3:#555b6b;
+  --blue:#4a8fe8;--blue-dim:rgba(74,143,232,0.15);
+  --green:#2db87a;--amber:#e8a23a;--red:#e05a5a;
+  --gray:#4a5060;--radius:8px;--radius-lg:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;line-height:1.5}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:0.5px solid var(--border);background:var(--bg2)}
+.logo{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;letter-spacing:.04em}
+.logo span{color:var(--blue)}
+.subtitle{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+.header-meta{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-align:right}
+.header-meta strong{color:var(--text2)}
+
+/* Tab bar */
+.tab-bar{display:flex;gap:0;border-bottom:0.5px solid var(--border);background:var(--bg2);padding:0 28px}
+.tab-btn{padding:12px 20px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text3);border-bottom:2px solid transparent;transition:all .15s;font-family:'DM Sans',sans-serif;letter-spacing:.01em}
+.tab-btn:hover{color:var(--text2)}
+.tab-btn.on{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* Main layout */
+.tab-content{display:none}
+.tab-content.on{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 97px)}
+
+/* Sidebar */
+.sidebar{background:var(--bg2);border-right:0.5px solid var(--border);padding:18px 14px;display:flex;flex-direction:column;gap:18px;overflow-y:auto}
+.ctrl-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-family:'DM Mono',monospace;padding-bottom:4px;border-bottom:0.5px solid var(--border);margin-bottom:2px}
+.btn-group{display:flex;flex-direction:column;gap:3px}
+.btn{padding:7px 10px;border-radius:var(--radius);font-size:12px;cursor:pointer;border:0.5px solid transparent;background:transparent;color:var(--text2);text-align:left;transition:all .15s;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px}
+.btn:hover{background:var(--bg3);color:var(--text)}
+.btn.on{background:var(--blue-dim);color:var(--blue);border-color:rgba(74,143,232,0.25)}
+.btn .di{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.btn-row{display:flex;gap:3px}
+.btn-sm{flex:1;padding:6px 4px;border-radius:var(--radius);font-size:11px;font-weight:500;cursor:pointer;border:0.5px solid transparent;background:transparent;color:var(--text2);text-align:center;transition:all .15s;font-family:'DM Mono',monospace}
+.btn-sm:hover{background:var(--bg3);color:var(--text)}
+.btn-sm.on{background:var(--blue-dim);color:var(--blue);border-color:rgba(74,143,232,0.25)}
+.egb-toggle{padding:8px 10px;border-radius:var(--radius);font-size:12px;cursor:pointer;border:0.5px solid var(--border2);background:transparent;color:var(--text2);text-align:left;transition:all .15s;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:space-between}
+.egb-toggle:hover{border-color:var(--blue);color:var(--text)}
+.egb-toggle.on{background:var(--blue-dim);color:var(--blue);border-color:rgba(74,143,232,0.3)}
+.toggle-pip{width:28px;height:14px;border-radius:7px;background:var(--bg3);border:0.5px solid var(--border2);position:relative;transition:all .2s;flex-shrink:0}
+.egb-toggle.on .toggle-pip{background:var(--blue);border-color:var(--blue)}
+.toggle-pip::after{content:'';position:absolute;top:2px;left:2px;width:9px;height:9px;border-radius:50%;background:var(--text3);transition:all .2s}
+.egb-toggle.on .toggle-pip::after{left:16px;background:#fff}
+.sel{width:100%;padding:7px 10px;border-radius:var(--radius);background:var(--bg3);border:0.5px solid var(--border2);color:var(--text);font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23555b6b'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.sel:focus{outline:none;border-color:var(--blue)}
+.sel option{background:var(--bg2)}
+.sdiv{height:0.5px;background:var(--border)}
+.about-text{font-size:10px;color:var(--text3);line-height:1.7;font-family:'DM Mono',monospace}
+
+/* Stats */
+.stats-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-bottom:0.5px solid var(--border)}
+.stat{background:var(--bg2);padding:11px 16px}
+.stat-label{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.stat-val{font-size:20px;font-weight:500;color:var(--text);font-family:'DM Mono',monospace}
+.stat-val.good{color:var(--green)}
+.stat-val.dim{font-size:13px;color:var(--text2)}
+
+/* Content */
+.content{display:flex;flex-direction:column;overflow:hidden}
+.charts-area{flex:1;padding:16px 18px 0;display:flex;flex-direction:column;gap:12px}
+.scatter-wrap{position:relative;flex:1;min-height:340px}
+.hover-box{position:absolute;top:0;right:0;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:11px 13px;font-size:11px;color:var(--text);line-height:1.9;pointer-events:none;display:none;min-width:185px;z-index:10;font-family:'DM Mono',monospace}
+.hb-name{font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px;font-family:'DM Sans',sans-serif}
+.hb-row{color:var(--text2);font-size:11px}
+.hb-resid{font-weight:500;font-size:12px;margin-top:2px}
+.hb-note{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* Pills */
+.pills-section{padding:10px 18px;border-top:0.5px solid var(--border)}
+.pills-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;flex-wrap:wrap;gap:6px}
+.pills-label{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase}
+.legend{display:flex;gap:12px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)}
+.leg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.pills-grid{display:flex;flex-wrap:wrap;gap:4px}
+.pill{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:500;cursor:pointer;transition:all .15s;border:0.5px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:'DM Mono',monospace;user-select:none}
+.pill:hover{border-color:var(--blue);color:var(--text)}
+.pill.excl{background:transparent;color:var(--text3);border-color:var(--border);text-decoration:line-through}
+.pill.base-mark{border-color:var(--blue);color:var(--blue)}
+.pill.egb-pill{border-color:rgba(74,143,232,0.28)}
+
+/* Residual */
+.resid-section{border-top:0.5px solid var(--border);padding:8px 18px 12px}
+.resid-label{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
+.resid-wrap{position:relative;height:150px}
+
+/* Footer */
+.footer{padding:7px 18px;border-top:0.5px solid var(--border);font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;display:flex;gap:16px;flex-wrap:wrap;background:var(--bg2)}
+
+/* Year slider */
+.year-row{display:flex;flex-direction:column;gap:6px}
+.year-btns{display:flex;gap:3px}
+.year-btn{flex:1;padding:5px 2px;border-radius:var(--radius);font-size:11px;font-weight:500;cursor:pointer;border:0.5px solid transparent;background:transparent;color:var(--text2);text-align:center;transition:all .15s;font-family:'DM Mono',monospace}
+.year-btn:hover{background:var(--bg3);color:var(--text)}
+.year-btn.on{background:var(--blue-dim);color:var(--blue);border-color:rgba(74,143,232,0.25)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">SOVEREIGN<span>.</span>SPREAD</div>
+    <div class="subtitle">Multi-factor regression dashboard · 24 DM sovereigns</div>
+  </div>
+  <div class="header-meta"><strong>IMF WEO Apr 2026</strong> · Ratings: Moody's · S&P · Fitch<br>Source data as uploaded · April 2026</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn on" onclick="switchTab('ratings')">Rating regression</button>
+  <button class="tab-btn" onclick="switchTab('debt')">Debt regression</button>
+  <button class="tab-btn" onclick="switchTab('polrisk')">Political risk</button>
+  <button class="tab-btn" onclick="switchTab('gdp')">Real GDP</button>
+  <button class="tab-btn" onclick="switchTab('inflation')">Inflation</button>
+  <button class="tab-btn" onclick="switchTab('cbholdings')">CB holdings</button>
+</div>
+
+<!-- ══════════════ TAB 1: RATINGS ══════════════ -->
+<div class="tab-content on" id="tab-ratings">
+  <div class="sidebar">
+    <div><div class="ctrl-label">Metric</div>
+      <div class="btn-group" id="r-mseg">
+        <button class="btn on" onclick="R.setMode('zspread',this)"><span class="di"></span>Z-spread</button>
+        <button class="btn" onclick="R.setMode('yield',this)"><span class="di"></span>Yield</button>
+        <button class="btn" onclick="R.setMode('yspread',this)"><span class="di"></span>Yield spread</button>
+        <button class="btn" onclick="R.setMode('cds',this)"><span class="di"></span>CDS 5Y</button>
+      </div>
+    </div>
+    <div id="r-base-group" style="display:none"><div class="ctrl-label">Base country</div>
+      <select class="sel" id="r-base-sel" onchange="R.setBase(this.value)"></select>
+      <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px" id="r-base-formula"></div>
+    </div>
+    <div><div class="ctrl-label">Tenor</div>
+      <div class="btn-row" id="r-tseg">
+        <button class="btn-sm on" onclick="R.setTenor('2Y',this)">2Y</button>
+        <button class="btn-sm" onclick="R.setTenor('5Y',this)">5Y</button>
+        <button class="btn-sm" onclick="R.setTenor('10Y',this)">10Y</button>
+        <button class="btn-sm" onclick="R.setTenor('30Y',this)">30Y</button>
+      </div>
+    </div>
+    <div><div class="ctrl-label">Regression fit</div>
+      <div class="btn-row" id="r-fseg">
+        <button class="btn-sm on" onclick="R.setFit('linear',this)">Linear</button>
+        <button class="btn-sm" onclick="R.setFit('poly2',this)">Quadratic</button>
+      </div>
+    </div>
+    <div class="sdiv"></div>
+    <div><div class="ctrl-label">Universe filter</div>
+      <button class="egb-toggle" id="r-egb-btn" onclick="R.toggleEGB()">
+        <span>EGB only</span><span class="toggle-pip"></span>
+      </button>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.5" id="r-egb-hint"></div>
+    </div>
+    <div class="sdiv"></div>
+    <div><div class="ctrl-label">About</div>
+      <div class="about-text">X-axis: average credit rating score (Moody's · S&P · Fitch).<br><br>Y-axis: z-spread, yield, yield spread, or CDS.<br><br>EGB = DE FR IT ES PT NL AT BE FI GR IE.</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="stats-strip">
+      <div class="stat"><div class="stat-label">R²</div><div class="stat-val" id="r-s-r2">—</div></div>
+      <div class="stat"><div class="stat-label">n (regression)</div><div class="stat-val" id="r-s-n">—</div></div>
+      <div class="stat"><div class="stat-label">RMSE</div><div class="stat-val dim" id="r-s-rmse">—</div></div>
+      <div class="stat"><div class="stat-label">Fit</div><div class="stat-val dim" id="r-s-fit">—</div></div>
+    </div>
+    <div class="charts-area">
+      <div class="scatter-wrap">
+        <canvas id="r-sc"></canvas>
+        <div class="hover-box" id="r-hover-box">
+          <div class="hb-name" id="r-hb-name"></div>
+          <div class="hb-row" id="r-hb-rating"></div>
+          <div class="hb-row" id="r-hb-val"></div>
+          <div class="hb-resid" id="r-hb-resid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pills-section">
+      <div class="pills-header">
+        <span class="pills-label">Include / exclude</span>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#4a8fe8"></div>EGB</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#2db87a"></div>Non-EGB</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#4a5060"></div>Excluded</div>
+        </div>
+      </div>
+      <div class="pills-grid" id="r-pills"></div>
+    </div>
+    <div class="resid-section">
+      <div class="resid-label">Residual — orange = cheap · blue = rich</div>
+      <div class="resid-wrap"><canvas id="r-rc"></canvas></div>
+    </div>
+    <div class="footer">
+      <span>Ratings: Moody's, S&P, Fitch (Apr 2026)</span>
+      <span>Portugal Fitch = A</span>
+      <span>Norway/Sweden Fitch = AAA</span>
+      <span>Norway/Sweden 30Y = null</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TAB 2: DEBT ══════════════ -->
+<div class="tab-content" id="tab-debt">
+  <div class="sidebar">
+    <div><div class="ctrl-label">X-axis: Debt type</div>
+      <div class="btn-group" id="d-dtype-seg">
+        <button class="btn on" onclick="D.setDebtType('gross',this)"><span class="di"></span>Gross debt (% GDP)</button>
+        <button class="btn" onclick="D.setDebtType('net',this)"><span class="di"></span>Net debt (% GDP)</button>
+      </div>
+    </div>
+    <div><div class="ctrl-label">Year (IMF WEO projection)</div>
+      <div class="year-btns" id="d-yseg">
+        <button class="year-btn on" onclick="D.setYear(2026,this)">2026</button>
+        <button class="year-btn" onclick="D.setYear(2027,this)">2027</button>
+        <button class="year-btn" onclick="D.setYear(2028,this)">2028</button>
+        <button class="year-btn" onclick="D.setYear(2029,this)">2029</button>
+        <button class="year-btn" onclick="D.setYear(2030,this)">2030</button>
+      </div>
+    </div>
+    <div><div class="ctrl-label">Y-axis: Metric</div>
+      <div class="btn-group" id="d-mseg">
+        <button class="btn on" onclick="D.setMode('zspread',this)"><span class="di"></span>Z-spread</button>
+        <button class="btn" onclick="D.setMode('yield',this)"><span class="di"></span>Yield</button>
+        <button class="btn" onclick="D.setMode('yspread',this)"><span class="di"></span>Yield spread</button>
+        <button class="btn" onclick="D.setMode('cds',this)"><span class="di"></span>CDS 5Y</button>
+      </div>
+    </div>
+    <div id="d-base-group" style="display:none"><div class="ctrl-label">Base country</div>
+      <select class="sel" id="d-base-sel" onchange="D.setBase(this.value)"></select>
+      <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px" id="d-base-formula"></div>
+    </div>
+    <div><div class="ctrl-label">Tenor</div>
+      <div class="btn-row" id="d-tseg">
+        <button class="btn-sm on" onclick="D.setTenor('2Y',this)">2Y</button>
+        <button class="btn-sm" onclick="D.setTenor('5Y',this)">5Y</button>
+        <button class="btn-sm" onclick="D.setTenor('10Y',this)">10Y</button>
+        <button class="btn-sm" onclick="D.setTenor('30Y',this)">30Y</button>
+      </div>
+    </div>
+    <div><div class="ctrl-label">Regression fit</div>
+      <div class="btn-row" id="d-fseg">
+        <button class="btn-sm on" onclick="D.setFit('linear',this)">Linear</button>
+        <button class="btn-sm" onclick="D.setFit('poly2',this)">Quadratic</button>
+      </div>
+    </div>
+    <div class="sdiv"></div>
+    <div><div class="ctrl-label">Universe filter</div>
+      <button class="egb-toggle" id="d-egb-btn" onclick="D.toggleEGB()">
+        <span>EGB only</span><span class="toggle-pip"></span>
+      </button>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.5" id="d-egb-hint"></div>
+    </div>
+    <div class="sdiv"></div>
+    <div><div class="ctrl-label">About</div>
+      <div class="about-text">X-axis: IMF WEO Apr 2026 projections.<br><br>Greece net = gross debt (†). Singapore & China: net debt n/a (gross only).<br><br>Norway net is negative (net creditor, SWF).</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="stats-strip">
+      <div class="stat"><div class="stat-label">R²</div><div class="stat-val" id="d-s-r2">—</div></div>
+      <div class="stat"><div class="stat-label">n (regression)</div><div class="stat-val" id="d-s-n">—</div></div>
+      <div class="stat"><div class="stat-label">RMSE</div><div class="stat-val dim" id="d-s-rmse">—</div></div>
+      <div class="stat"><div class="stat-label">Fit</div><div class="stat-val dim" id="d-s-fit">—</div></div>
+    </div>
+    <div class="charts-area">
+      <div class="scatter-wrap">
+        <canvas id="d-sc"></canvas>
+        <div class="hover-box" id="d-hover-box">
+          <div class="hb-name" id="d-hb-name"></div>
+          <div class="hb-row" id="d-hb-debt"></div>
+          <div class="hb-row" id="d-hb-val"></div>
+          <div class="hb-resid" id="d-hb-resid"></div>
+          <div class="hb-note" id="d-hb-note"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pills-section">
+      <div class="pills-header">
+        <span class="pills-label">Include / exclude</span>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#4a8fe8"></div>EGB</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#2db87a"></div>Non-EGB</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#4a5060"></div>Excluded</div>
+        </div>
+      </div>
+      <div class="pills-grid" id="d-pills"></div>
+    </div>
+    <div class="resid-section">
+      <div class="resid-label">Residual — orange = cheap · blue = rich</div>
+      <div class="resid-wrap"><canvas id="d-rc"></canvas></div>
+    </div>
+    <div class="footer">
+      <span>Source: IMF WEO April 2026</span>
+      <span>General government gross/net debt, % of GDP</span>
+      <span>Greece net = gross debt (†)</span>
+      <span>Singapore & China: net debt n/a</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TAB 3: POLITICAL RISK ══════════════ -->
+<div class="tab-content" id="tab-polrisk">
+  <div class="sidebar">
+    <div><div class="ctrl-label">Y-axis: Metric</div>
+      <div class="btn-group" id="p-mseg">
+        <button class="btn on" onclick="P.setMode('zspread',this)"><span class="di"></span>Z-spread</button>
+        <button class="btn" onclick="P.setMode('yield',this)"><span class="di"></span>Yield</button>
+        <button class="btn" onclick="P.setMode('yspread',this)"><span class="di"></span>Yield spread</button>
+        <button class="btn" onclick="P.setMode('cds',this)"><span class="di"></span>CDS 5Y</button>
+      </div>
+    </div>
+    <div id="p-base-group" style="display:none"><div class="ctrl-label">Base country</div>
+      <select class="sel" id="p-base-sel" onchange="P.setBase(this.value)"></select>
+      <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px" id="p-base-formula"></div>
+    </div>
+    <div><div class="ctrl-label">Tenor</div>
+      <div class="btn-row" id="p-tseg">
+        <button class="btn-sm on" onclick="P.setTenor('2Y',this)">2Y</button>
+        <button class="btn-sm" onclick="P.setTenor('5Y',this)">5Y</button>
+        <button class="btn-sm" onclick="P.setTenor('10Y',this)">10Y</button>
+        <button class="btn-sm" onclick="P.setTenor('30Y',this)">30Y</button>
+      </div>
+    </div>
+    <div><div class="ctrl-label">Regression fit</div>
+      <div class="btn-row" id="p-fseg">
+        <button class="btn-sm on" onclick="P.setFit('linear',this)">Linear</button>
+        <button class="btn-sm" onclick="P.setFit('poly2',this)">Quadratic</button>
+      </div>
+    </div>
+    <div class="sdiv"></div>
+    <div><div class="ctrl-label">Universe filter</div>
+      <button class="egb-toggle" id="p-egb-btn" onclick="P.toggleEGB()">
+        <span>EGB only</span><span class="toggle-pip"></span>
+      </button>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.5" id="p-egb-hint"></div>
+    </div>
+    <div class="sdiv"></div>
+    <div><div class="ctrl-label">About</div>
+      <div class="about-text">X-axis: Political stability score (0–100).<br><br>100 = most stable / lowest risk.<br>0 = least stable / highest risk.<br><br>Expected slope is negative — more stable countries trade tighter.<br><br>Source: ICRG / PRS Group composite index.</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="stats-strip">
+      <div class="stat"><div class="stat-label">R²</div><div class="stat-val" id="p-s-r2">—</div></div>
+      <div class="stat"><div class="stat-label">n (regression)</div><div class="stat-val" id="p-s-n">—</div></div>
+      <div class="stat"><div class="stat-label">RMSE</div><div class="stat-val dim" id="p-s-rmse">—</div></div>
+      <div class="stat"><div class="stat-label">Fit</div><div class="stat-val dim" id="p-s-fit">—</div></div>
+    </div>
+    <div class="charts-area">
+      <div class="scatter-wrap">
+        <canvas id="p-sc"></canvas>
+        <div class="hover-box" id="p-hover-box">
+          <div class="hb-name" id="p-hb-name"></div>
+          <div class="hb-row" id="p-hb-risk"></div>
+          <div class="hb-row" id="p-hb-val"></div>
+          <div class="hb-resid" id="p-hb-resid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pills-section">
+      <div class="pills-header">
+        <span class="pills-label">Include / exclude from regression</span>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#4a8fe8"></div>EGB</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#2db87a"></div>Non-EGB</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#4a5060"></div>Excluded</div>
+        </div>
+      </div>
+      <div class="pills-grid" id="p-pills"></div>
+    </div>
+    <div class="resid-section">
+      <div class="resid-label">Residual — orange = cheap vs fit · blue = rich vs fit</div>
+      <div class="resid-wrap"><canvas id="p-rc"></canvas></div>
+    </div>
+    <div class="footer">
+      <span>Political stability score: 0–100 (100 = most stable)</span>
+      <span>Higher score → expected lower spread (negative slope)</span>
+      <span>Source: ICRG / PRS Group composite</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TAB 4: REAL GDP ══════════════ -->
+<div class="tab-content" id="tab-gdp">
+  <div class="sidebar">
+    <div><div class="ctrl-label">Source</div>
+      <div class="btn-group" id="gdp-src-seg">
+        <button class="btn on" onclick="GDP.setSrc('imf',this)"><span class="di"></span>IMF WEO — Apr 2026 (2026–2030)</button>
+        <button class="btn" onclick="GDP.setSrc('oecd',this)"><span class="di"></span>OECD — Mar 2026 (2026–2027, G20)</button>
+      </div>
+    </div>
+    <div><div class="ctrl-label">Year</div>
+      <div class="year-btns" id="gdp-yr-seg"></div>
+    </div>
+    <div><div class="ctrl-label">Y-axis: Metric</div>
+      <div class="btn-group" id="gdp-mseg">
+        <button class="btn on" onclick="GDP.setMode('zspread',this)"><span class="di"></span>Z-spread</button>
+        <button class="btn" onclick="GDP.setMode('yield',this)"><span class="di"></span>Yield</button>
+        <button class="btn" onclick="GDP.setMode('yspread',this)"><span class="di"></span>Yield spread</button>
+        <button class="btn" onclick="GDP.setMode('cds',this)"><span class="di"></span>CDS 5Y</button>
+      </div>
+    </div>
+    <div id="gdp-base-group" style="display:none"><div class="ctrl-label">Base country</div>
+      <select class="sel" id="gdp-base-sel" onchange="GDP.setBase(this.value)"></select>
+      <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px" id="gdp-base-formula"></div>
+    </div>
+    <div><div class="ctrl-label">Tenor</div>
+      <div class="btn-row" id="gdp-tseg">
+        <button class="btn-sm on" onclick="GDP.setTenor('2Y',this)">2Y</button>
+        <button class="btn-sm" onclick="GDP.setTenor('5Y',this)">5Y</button>
+        <button class="btn-sm" onclick="GDP.setTenor('10Y',this)">10Y</button>
+        <button class="btn-sm" onclick="GDP.setTenor('30Y',this)">30Y</button>
+      </div>
+    </div>
+    <div><div class="ctrl-label">Regression fit</div>
+      <div class="btn-row" id="gdp-fseg">
+        <button class="btn-sm on" onclick="GDP.setFit('linear',this)">Linear</button>
+        <button class="btn-sm" onclick="GDP.setFit('poly2',this)">Quadratic</button>
+      </div>
+    </div>
+    <div class="sdiv"></div>
+    <div><div class="ctrl-label">Universe filter</div>
+      <button class="egb-toggle" id="gdp-egb-btn" onclick="GDP.toggleEGB()">
+        <span>EGB only</span><span class="toggle-pip"></span>
+      </button>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.5" id="gdp-egb-hint"></div>
+    </div>
+    <div class="sdiv"></div>
+    <div><div class="ctrl-label">About</div>
+      <div class="about-text">X-axis: Real GDP growth (% annual).<br><br>IMF: all 24 countries, 2026–2030.<br>OECD: G20 subset only, 2026–2027.<br><br>Countries with no data for the selected source are greyed out.</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="stats-strip">
+      <div class="stat"><div class="stat-label">R²</div><div class="stat-val" id="gdp-s-r2">—</div></div>
+      <div class="stat"><div class="stat-label">n (regression)</div><div class="stat-val" id="gdp-s-n">—</div></div>
+      <div class="stat"><div class="stat-label">RMSE</div><div class="stat-val dim" id="gdp-s-rmse">—</div></div>
+      <div class="stat"><div class="stat-label">Fit</div><div class="stat-val dim" id="gdp-s-fit">—</div></div>
+    </div>
+    <div class="charts-area">
+      <div class="scatter-wrap">
+        <canvas id="gdp-sc"></canvas>
+        <div class="hover-box" id="gdp-hover-box">
+          <div class="hb-name" id="gdp-hb-name"></div>
+          <div class="hb-row" id="gdp-hb-x"></div>
+          <div class="hb-row" id="gdp-hb-val"></div>
+          <div class="hb-resid" id="gdp-hb-resid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pills-section">
+      <div class="pills-header">
+        <span class="pills-label">Include / exclude from regression</span>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#4a8fe8"></div>EGB</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#2db87a"></div>Non-EGB</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#4a5060"></div>Excluded</div>
+        </div>
+      </div>
+      <div class="pills-grid" id="gdp-pills"></div>
+    </div>
+    <div class="resid-section">
+      <div class="resid-label">Residual — orange = cheap vs fit · blue = rich vs fit</div>
+      <div class="resid-wrap"><canvas id="gdp-rc"></canvas></div>
+    </div>
+    <div class="footer">
+      <span id="gdp-footer-src">IMF WEO April 2026</span>
+      <span>Real GDP growth, annual % change</span>
+      <span>OECD coverage: G20 economies, 2026–2027 only</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TAB 5: INFLATION ══════════════ -->
+<div class="tab-content" id="tab-inflation">
+  <div class="sidebar">
+    <div><div class="ctrl-label">Source</div>
+      <div class="btn-group" id="inf-src-seg">
+        <button class="btn on" onclick="INF.setSrc('imf',this)"><span class="di"></span>IMF WEO — Apr 2026 (2026–2030)</button>
+        <button class="btn" onclick="INF.setSrc('oecd',this)"><span class="di"></span>OECD — Mar 2026 (2026–2027, G20)</button>
+      </div>
+    </div>
+    <div><div class="ctrl-label">Year</div>
+      <div class="year-btns" id="inf-yr-seg"></div>
+    </div>
+    <div><div class="ctrl-label">Y-axis: Metric</div>
+      <div class="btn-group" id="inf-mseg">
+        <button class="btn on" onclick="INF.setMode('zspread',this)"><span class="di"></span>Z-spread</button>
+        <button class="btn" onclick="INF.setMode('yield',this)"><span class="di"></span>Yield</button>
+        <button class="btn" onclick="INF.setMode('yspread',this)"><span class="di"></span>Yield spread</button>
+        <button class="btn" onclick="INF.setMode('cds',this)"><span class="di"></span>CDS 5Y</button>
+      </div>
+    </div>
+    <div id="inf-base-group" style="display:none"><div class="ctrl-label">Base country</div>
+      <select class="sel" id="inf-base-sel" onchange="INF.setBase(this.value)"></select>
+      <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px" id="inf-base-formula"></div>
+    </div>
+    <div><div class="ctrl-label">Tenor</div>
+      <div class="btn-row" id="inf-tseg">
+        <button class="btn-sm on" onclick="INF.setTenor('2Y',this)">2Y</button>
+        <button class="btn-sm" onclick="INF.setTenor('5Y',this)">5Y</button>
+        <button class="btn-sm" onclick="INF.setTenor('10Y',this)">10Y</button>
+        <button class="btn-sm" onclick="INF.setTenor('30Y',this)">30Y</button>
+      </div>
+    </div>
+    <div><div class="ctrl-label">Regression fit</div>
+      <div class="btn-row" id="inf-fseg">
+        <button class="btn-sm on" onclick="INF.setFit('linear',this)">Linear</button>
+        <button class="btn-sm" onclick="INF.setFit('poly2',this)">Quadratic</button>
+      </div>
+    </div>
+    <div class="sdiv"></div>
+    <div><div class="ctrl-label">Universe filter</div>
+      <button class="egb-toggle" id="inf-egb-btn" onclick="INF.toggleEGB()">
+        <span>EGB only</span><span class="toggle-pip"></span>
+      </button>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.5" id="inf-egb-hint"></div>
+    </div>
+    <div class="sdiv"></div>
+    <div><div class="ctrl-label">About</div>
+      <div class="about-text">X-axis: Headline CPI (% annual).<br><br>IMF: all 24 countries, 2026–2030.<br>OECD: G20 subset only, 2026–2027.<br><br>Higher inflation expected to correlate with wider spreads.</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="stats-strip">
+      <div class="stat"><div class="stat-label">R²</div><div class="stat-val" id="inf-s-r2">—</div></div>
+      <div class="stat"><div class="stat-label">n (regression)</div><div class="stat-val" id="inf-s-n">—</div></div>
+      <div class="stat"><div class="stat-label">RMSE</div><div class="stat-val dim" id="inf-s-rmse">—</div></div>
+      <div class="stat"><div class="stat-label">Fit</div><div class="stat-val dim" id="inf-s-fit">—</div></div>
+    </div>
+    <div class="charts-area">
+      <div class="scatter-wrap">
+        <canvas id="inf-sc"></canvas>
+        <div class="hover-box" id="inf-hover-box">
+          <div class="hb-name" id="inf-hb-name"></div>
+          <div class="hb-row" id="inf-hb-x"></div>
+          <div class="hb-row" id="inf-hb-val"></div>
+          <div class="hb-resid" id="inf-hb-resid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pills-section">
+      <div class="pills-header">
+        <span class="pills-label">Include / exclude from regression</span>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#4a8fe8"></div>EGB</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#2db87a"></div>Non-EGB</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#4a5060"></div>Excluded</div>
+        </div>
+      </div>
+      <div class="pills-grid" id="inf-pills"></div>
+    </div>
+    <div class="resid-section">
+      <div class="resid-label">Residual — orange = cheap vs fit · blue = rich vs fit</div>
+      <div class="resid-wrap"><canvas id="inf-rc"></canvas></div>
+    </div>
+    <div class="footer">
+      <span id="inf-footer-src">IMF WEO April 2026</span>
+      <span>Headline CPI, annual % change</span>
+      <span>OECD coverage: G20 economies, 2026–2027 only</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TAB 6: CB HOLDINGS ══════════════ -->
+<div class="tab-content" id="tab-cbholdings">
+  <div class="sidebar">
+    <div><div class="ctrl-label">X-axis: CB metric</div>
+      <div class="btn-group" id="cb-xseg">
+        <button class="btn on" onclick="CB.setX('gdp',this)"><span class="di"></span>CB holdings % GDP</button>
+        <button class="btn" onclick="CB.setX('debt',this)"><span class="di"></span>CB holdings % govt debt</button>
+      </div>
+    </div>
+    <div><div class="ctrl-label">Y-axis: Metric</div>
+      <div class="btn-group" id="cb-mseg">
+        <button class="btn on" onclick="CB.setMode('zspread',this)"><span class="di"></span>Z-spread</button>
+        <button class="btn" onclick="CB.setMode('yield',this)"><span class="di"></span>Yield</button>
+        <button class="btn" onclick="CB.setMode('yspread',this)"><span class="di"></span>Yield spread</button>
+        <button class="btn" onclick="CB.setMode('cds',this)"><span class="di"></span>CDS 5Y</button>
+      </div>
+    </div>
+    <div id="cb-base-group" style="display:none"><div class="ctrl-label">Base country</div>
+      <select class="sel" id="cb-base-sel" onchange="CB.setBase(this.value)"></select>
+      <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px" id="cb-base-formula"></div>
+    </div>
+    <div><div class="ctrl-label">Tenor</div>
+      <div class="btn-row" id="cb-tseg">
+        <button class="btn-sm on" onclick="CB.setTenor('2Y',this)">2Y</button>
+        <button class="btn-sm" onclick="CB.setTenor('5Y',this)">5Y</button>
+        <button class="btn-sm" onclick="CB.setTenor('10Y',this)">10Y</button>
+        <button class="btn-sm" onclick="CB.setTenor('30Y',this)">30Y</button>
+      </div>
+    </div>
+    <div><div class="ctrl-label">Regression fit</div>
+      <div class="btn-row" id="cb-fseg">
+        <button class="btn-sm on" onclick="CB.setFit('linear',this)">Linear</button>
+        <button class="btn-sm" onclick="CB.setFit('poly2',this)">Quadratic</button>
+      </div>
+    </div>
+    <div class="sdiv"></div>
+    <div><div class="ctrl-label">Universe filter</div>
+      <button class="egb-toggle" id="cb-egb-btn" onclick="CB.toggleEGB()">
+        <span>EGB only</span><span class="toggle-pip"></span>
+      </button>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.5" id="cb-egb-hint"></div>
+    </div>
+    <div class="sdiv"></div>
+    <div><div class="ctrl-label">About</div>
+      <div class="about-text">X-axis: Central bank sovereign bond holdings.<br><br>Eurozone: ECB/Eurosystem PSPP+PEPP combined. Supranationals (€150.9bn) excluded from individual rows.<br><br>DK, NO, CH = 0% (QT complete, no holdings).<br>SG (MAS) = N/A.<br>KR = ~1–2% midpoint.<br>US = ~22% midpoint.<br><br>Expected negative slope — higher CB holdings → lower spread (price support).</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="stats-strip">
+      <div class="stat"><div class="stat-label">R²</div><div class="stat-val" id="cb-s-r2">—</div></div>
+      <div class="stat"><div class="stat-label">n (regression)</div><div class="stat-val" id="cb-s-n">—</div></div>
+      <div class="stat"><div class="stat-label">RMSE</div><div class="stat-val dim" id="cb-s-rmse">—</div></div>
+      <div class="stat"><div class="stat-label">Fit</div><div class="stat-val dim" id="cb-s-fit">—</div></div>
+    </div>
+    <div class="charts-area">
+      <div class="scatter-wrap">
+        <canvas id="cb-sc"></canvas>
+        <div class="hover-box" id="cb-hover-box">
+          <div class="hb-name" id="cb-hb-name"></div>
+          <div class="hb-row" id="cb-hb-cb"></div>
+          <div class="hb-row" id="cb-hb-val"></div>
+          <div class="hb-resid" id="cb-hb-resid"></div>
+          <div class="hb-note" id="cb-hb-note"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pills-section">
+      <div class="pills-header">
+        <span class="pills-label">Include / exclude from regression</span>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#4a8fe8"></div>EGB</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#2db87a"></div>Non-EGB</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#4a5060"></div>Excluded</div>
+        </div>
+      </div>
+      <div class="pills-grid" id="cb-pills"></div>
+    </div>
+    <div class="resid-section">
+      <div class="resid-label">Residual — orange = cheap vs fit · blue = rich vs fit</div>
+      <div class="resid-wrap"><canvas id="cb-rc"></canvas></div>
+    </div>
+    <div class="footer">
+      <span>Source: central bank balance sheet data (various)</span>
+      <span>Eurozone: PSPP+PEPP combined per NCB</span>
+      <span>DK/NO/CH = 0% (QT complete) · SG = N/A · KR/US/AU/NZ/SE = approximate</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   SHARED DATA
+══════════════════════════════════════════ */
+const EGB=new Set(['DE','FR','IT','ES','PT','NL','AT','BE','FI','GR','IE']);
+const RS={'AAA':21,'Aaa':21,'AA+':20,'Aa1':20,'AA':19,'Aa2':19,'AA-':18,'Aa3':18,'A+':17,'A1':17,'A':16,'A2':16,'A-':15,'A3':15,'BBB+':14,'Baa1':14,'BBB':13,'Baa2':13,'BBB-':12,'Baa3':12};
+const NL={21:'AAA',20:'AA+',19:'AA',18:'AA-',17:'A+',16:'A',15:'A-',14:'BBB+',13:'BBB',12:'BBB-'};
+
+function cleanR(r){if(!r||r==='0.00'||r==='WDu'||r===''||r===null)return null;return r.replace(/u$/,'').trim();}
+function scoreR(r){const c=cleanR(r);return c&&RS[c]!=null?RS[c]:null;}
+function avgSc(c){const v=[scoreR(c.moodys),scoreR(c.sp),scoreR(c.fitch)].filter(x=>x!==null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;}
+
+const RAW=[
+  {cc:'US',name:'United States', moodys:'Aa1', sp:'AA+', fitch:'AA+', cb_gdp:22.0,cb_debt:14.9,z2:14.83,y2:3.8,z5:29.85,z10:43.84,z30:77.41,y5:3.94,y10:4.31,y30:4.89,cds:40.51,polrisk:86.94,
+   gdp_imf:{2026:2.1,2027:2.1,2028:2.1,2029:1.9,2030:1.8},
+   gdp_oecd:{2026:2.0,2027:1.7},
+   cpi_imf:{2026:2.4,2027:2.2,2028:2.2,2029:2.2,2030:2.2},
+   cpi_oecd:{2026:4.2,2027:1.6},
+   gross:{2026:128.7,2027:132.7,2028:136.6,2029:140.1,2030:143.4},
+   net:  {2026:103.0,2027:106.6,2028:110.2,2029:113.6,2030:116.8}},
+  {cc:'UK',name:'United Kingdom',moodys:'Aa3', sp:'AA',  fitch:'AA-', cb_gdp:19.5,cb_debt:20.9,z2:14.8,y2:4.32,z5:28.34,z10:53.61,z30:78.93,y5:4.38,y10:4.83,y30:5.46,cds:21.44,polrisk:90.63,
+   gdp_imf:{2026:1.3,2027:1.5,2028:1.4,2029:1.4,2030:1.4},
+   gdp_oecd:{2026:0.7,2027:1.3},
+   cpi_imf:{2026:2.5,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:{2026:4.0,2027:2.6},
+   gross:{2026:104.8,2027:105.4,2028:105.8,2029:105.9,2030:105.4},
+   net:  {2026:95.9, 2027:96.4, 2028:96.8, 2029:96.8, 2030:96.4}},
+  {cc:'DE',name:'Germany',       moodys:'Aaa', sp:'AAA', fitch:'AAA', cb_gdp:17.8,cb_debt:28.9,z2:-21.04,y2:2.61,z5:-16.56,z10:-5.29,z30:35.63,y5:2.71,y10:2.99,y30:3.47,cds:9.75,polrisk:80.92,
+   gdp_imf:{2026:0.9,2027:1.5,2028:1.2,2029:1.0,2030:0.7},
+   gdp_oecd:{2026:0.8,2027:1.5},
+   cpi_imf:{2026:1.8,2027:2.0,2028:2.1,2029:2.2,2030:2.2},
+   cpi_oecd:{2026:2.9,2027:2.6},
+   gross:{2026:66.0, 2027:67.8, 2028:69.7, 2029:71.6, 2030:73.6},
+   net:  {2026:50.7, 2027:53.1, 2028:55.4, 2029:57.7, 2030:60.2}},
+  {cc:'FR',name:'France',        moodys:'Aa3', sp:'A+',  fitch:'A+',  cb_gdp:21.7,cb_debt:20.2,z2:-2.72,y2:2.79,z5:23.28,z10:64.71,z30:131.00,y5:3.10,y10:3.68,y30:4.44,cds:32.68,polrisk:84.24,
+   gdp_imf:{2026:0.9,2027:1.2,2028:1.3,2029:1.2,2030:1.2},
+   gdp_oecd:{2026:0.8,2027:1.0},
+   cpi_imf:{2026:1.5,2027:1.9,2028:1.9,2029:1.9,2030:1.9},
+   cpi_oecd:{2026:1.8,2027:1.5},
+   gross:{2026:119.6,2027:122.1,2028:124.6,2029:127.0,2030:129.4},
+   net:  {2026:111.3,2027:113.8,2028:116.3,2029:118.7,2030:121.1}},
+  {cc:'IT',name:'Italy',         moodys:'Baa2',sp:'BBB+',fitch:'BBB+',cb_gdp:26.6,cb_debt:18.4,z2:2.39,y2:2.84,z5:36.17,z10:79.73,z30:144.71,y5:3.23,y10:3.85,y30:4.60,cds:36.92,polrisk:49.65,
+   gdp_imf:{2026:0.8,2027:0.6,2028:0.7,2029:0.7,2030:0.7},
+   gdp_oecd:{2026:0.4,2027:0.6},
+   cpi_imf:{2026:2.0,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:{2026:2.4,2027:1.8},
+   gross:{2026:138.3,2027:138.5,2028:137.9,2029:137.3,2030:137.0},
+   net:  {2026:128.6,2027:129.1,2028:128.7,2029:128.4,2030:128.3}},
+  {cc:'ES',name:'Spain',         moodys:'A3',  sp:'A+',  fitch:'A',   cb_gdp:27.2,cb_debt:24.9,z2:-9.68,y2:2.72,z5:8.37,z10:42.20,z30:103.60,y5:2.96,y10:3.47,y30:4.15,cds:20.38,polrisk:63.2,
+   gdp_imf:{2026:2.0,2027:1.7,2028:1.6,2029:1.6,2030:1.6},
+   gdp_oecd:{2026:2.1,2027:1.7},
+   cpi_imf:{2026:2.0,2027:2.5,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:{2026:3.0,2027:2.2},
+   gross:{2026:98.7, 2027:96.9, 2028:95.5, 2029:94.1, 2030:92.6},
+   net:  {2026:84.6, 2027:83.3, 2028:82.5, 2029:81.5, 2030:80.4}},
+  {cc:'PT',name:'Portugal',      moodys:'A3',  sp:'A+',  fitch:'A',   cb_gdp:28.1,cb_debt:26.6,z2:-16.48,y2:2.65,z5:0.58,z10:35.73,z30:86.06,y5:2.89,y10:3.41,y30:4.00,cds:18.96,polrisk:72.96,
+   gdp_imf:{2026:2.1,2027:1.5,2028:1.6,2029:1.6,2030:1.7},
+   gdp_oecd:null,
+   cpi_imf:{2026:2.1,2027:2.2,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:null,
+   gross:{2026:86.9, 2027:83.9, 2028:81.5, 2029:79.4, 2030:77.4},
+   net:  {2026:82.6, 2027:79.8, 2028:77.5, 2029:75.6, 2030:73.7}},
+  {cc:'NL',name:'Netherlands',   moodys:'Aaa', sp:'AAA', fitch:'AAA', cb_gdp:16.2,cb_debt:38.3,z2:-16.64,y2:2.65,z5:-8.76,z10:6.63,z30:38.47,y5:2.78,y10:3.13,y30:3.51,cds:9.36,polrisk:90.93,
+   gdp_imf:{2026:1.2,2027:1.4,2028:1.4,2029:1.3,2030:1.2},
+   gdp_oecd:null,
+   cpi_imf:{2026:2.4,2027:2.4,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:null,
+   gross:{2026:45.2, 2027:45.7, 2028:46.4, 2029:47.4, 2030:48.5},
+   net:  {2026:37.3, 2027:37.7, 2028:38.2, 2029:39.1, 2030:40.0}},
+  {cc:'AT',name:'Austria',       moodys:'Aa1', sp:'AA+', fitch:'AA',  cb_gdp:20.3,cb_debt:24.8,z2:-16.18,y2:2.66,z5:0.55,z10:25.39,z30:70.50,y5:2.88,y10:3.30,y30:3.83,cds:15.03,polrisk:78.9,
+   gdp_imf:{2026:0.8,2027:1.6,2028:1.3,2029:1.0,2030:0.7},
+   gdp_oecd:null,
+   cpi_imf:{2026:2.3,2027:2.2,2028:2.1,2029:2.1,2030:2.1},
+   cpi_oecd:null,
+   gross:{2026:83.0, 2027:83.2, 2028:83.6, 2029:83.9, 2030:84.3},
+   net:  {2026:65.6, 2027:66.4, 2028:67.3, 2029:68.1, 2030:69.0}},
+  {cc:'BE',name:'Belgium',       moodys:'Aa3', sp:'AA',  fitch:'A+',  cb_gdp:21.1,cb_debt:23.1,z2:-9.59,y2:2.72,z5:12.89,z10:51.00,z30:121.76,y5:3.01,y10:3.56,y30:4.34,cds:19.22,polrisk:82.05,
+   gdp_imf:{2026:1.0,2027:1.3,2028:1.2,2029:1.3,2030:1.3},
+   gdp_oecd:null,
+   cpi_imf:{2026:1.3,2027:1.9,2028:2.0,2029:1.9,2030:1.9},
+   cpi_oecd:null,
+   gross:{2026:110.6,2027:113.3,2028:116.3,2029:119.5,2030:122.6},
+   net:  {2026:97.7, 2027:100.8,2028:104.2,2029:107.8,2030:111.2}},
+  {cc:'FI',name:'Finland',       moodys:'Aa1', sp:'AA+', fitch:'AA',  cb_gdp:20.7,cb_debt:31.2,z2:-13.62,y2:2.66,z5:2.83,z10:25.05,z30:74.63,y5:2.88,y10:3.28,y30:3.88,cds:12.03,polrisk:93.2,
+   gdp_imf:{2026:1.3,2027:1.3,2028:1.3,2029:1.2,2030:1.2},
+   gdp_oecd:null,
+   cpi_imf:{2026:1.9,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:null,
+   gross:{2026:89.1, 2027:90.6, 2028:92.0, 2029:93.2, 2030:94.2},
+   net:  {2026:45.4, 2027:47.6, 2028:49.5, 2029:51.4, 2030:53.0}},
+  {cc:'NO',name:'Norway',        moodys:'Aaa', sp:'AAA', fitch:'AAA', cb_gdp:0.0,cb_debt:0.0,z2:-43.77,y2:4.44,z5:-19.10,z10:-6.85,z30:null,y5:4.35,y10:4.32,y30:null,cds:7.92,polrisk:93.5,
+   gdp_imf:{2026:1.6,2027:1.6,2028:1.3,2029:1.3,2030:1.3},
+   gdp_oecd:null,
+   cpi_imf:{2026:2.4,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:null,
+   gross:{2026:42.5, 2027:42.0, 2028:41.4, 2029:39.3, 2030:40.0},
+   net:  {2026:-168.3,2027:-173.0,2028:-177.5,2029:-181.6,2030:-184.8}},
+  {cc:'SE',name:'Sweden',        moodys:'Aaa', sp:'AAA', fitch:'AAA', cb_gdp:0.9,cb_debt:5.3,z2:-28.22,y2:2.44,z5:-29.74,z10:-23.98,z30:null,y5:2.61,y10:2.90,y30:null,cds:8.43,polrisk:92.46,
+   gdp_imf:{2026:1.9,2027:1.8,2028:1.7,2029:1.7,2030:1.7},
+   gdp_oecd:null,
+   cpi_imf:{2026:1.6,2027:1.9,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:null,
+   gross:{2026:35.6, 2027:35.8, 2028:35.3, 2029:34.5, 2030:33.5},
+   net:  {2026:14.2, 2027:15.2, 2028:15.4, 2029:15.3, 2030:15.0}},
+  {cc:'JP',name:'Japan',         moodys:'A1',  sp:'A+',  fitch:'A',   cb_gdp:86.6,cb_debt:43.5,z2:2.23,y2:1.38,z5:6.77,z10:21.68,z30:63.93,y5:1.80,y10:2.38,y30:3.67,cds:29.22,polrisk:29.99,
+   gdp_imf:{2026:0.6,2027:0.6,2028:0.6,2029:0.5,2030:0.5},
+   gdp_oecd:{2026:0.9,2027:0.9},
+   cpi_imf:{2026:2.1,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:{2026:2.4,2027:1.9},
+   gross:{2026:226.8,2027:224.5,2028:222.9,2029:222.2,2030:222.2},
+   net:  {2026:128.9,2027:128.0,2028:128.0,2029:128.6,2030:129.9}},
+  {cc:'CA',name:'Canada',        moodys:'Aaa', sp:'AAA', fitch:'AA+', cb_gdp:9.9,cb_debt:13.1,z2:11.12,y2:2.81,z5:19.00,z10:26.59,z30:34.72,y5:3.08,y10:3.48,y30:3.91,cds:37.84,polrisk:84.82,
+   gdp_imf:{2026:1.5,2027:1.9,2028:1.7,2029:1.7,2030:1.6},
+   gdp_oecd:{2026:1.2,2027:1.7},
+   cpi_imf:{2026:2.0,2027:2.1,2028:2.0,2029:1.9,2030:1.9},
+   cpi_oecd:{2026:2.4,2027:2.0},
+   gross:{2026:113.0,2027:111.8,2028:110.7,2029:109.7,2030:107.9},
+   net:  {2026:14.1, 2027:14.7, 2028:15.5, 2029:15.8, 2030:15.9}},
+  {cc:'AU',name:'Australia',     moodys:'Aaa', sp:'AAA', fitch:'AAA', cb_gdp:7.8,cb_debt:25.0,z2:-0.12,y2:4.74,z5:0.95,z10:8.29,z30:44.52,y5:4.77,y10:5.04,y30:5.42,cds:15.42,polrisk:93.22,
+   gdp_imf:{2026:2.1,2027:2.2,2028:2.2,2029:2.2,2030:2.3},
+   gdp_oecd:{2026:2.3,2027:2.4},
+   cpi_imf:{2026:3.0,2027:2.6,2028:2.5,2029:2.5,2030:2.5},
+   cpi_oecd:{2026:4.1,2027:2.5},
+   gross:{2026:50.7, 2027:50.5, 2028:50.2, 2029:49.8, 2030:49.4},
+   net:  {2026:32.4, 2027:32.0, 2028:31.6, 2029:31.4, 2030:30.9}},
+  {cc:'NZ',name:'New Zealand',   moodys:'Aaa', sp:'AA+', fitch:'AA+', cb_gdp:7.0,cb_debt:14.4,z2:5.71,y2:3.54,z5:24.04,z10:38.71,z30:48.74,y5:4.23,y10:4.74,y30:5.35,cds:39.25,polrisk:94.22,
+   gdp_imf:{2026:2.2,2027:2.4,2028:2.3,2029:2.2,2030:2.2},
+   gdp_oecd:null,
+   cpi_imf:{2026:2.1,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:null,
+   gross:{2026:56.1, 2027:57.6, 2028:57.0, 2029:55.2, 2030:53.0},
+   net:  {2026:25.4, 2027:26.7, 2028:26.8, 2029:25.9, 2030:24.6}},
+  {cc:'GR',name:'Greece',        moodys:'Baa3',sp:'BBB', fitch:'BBB', cb_gdp:15.7,cb_debt:9.3,z2:-5.09,y2:2.77,z5:25.03,z10:73.61,z30:128.35,y5:3.13,y10:3.79,y30:4.42,cds:27.62,polrisk:46.05,
+   gdp_imf:{2026:2.0,2027:1.5,2028:1.6,2029:1.6,2030:1.6},
+   gdp_oecd:null,
+   cpi_imf:{2026:2.5,2027:2.6,2028:2.1,2029:2.0,2030:2.0},
+   cpi_oecd:null,
+   gross:{2026:141.9,2027:138.1,2028:135.6,2029:132.9,2030:130.2},
+   net:  {2026:141.9,2027:138.1,2028:135.6,2029:132.9,2030:130.2},grNetIsGross:true},
+  {cc:'IE',name:'Ireland',       moodys:'Aa3', sp:'AA+', fitch:'AA',  cb_gdp:21.3,cb_debt:25.4,z2:-19.87,y2:2.62,z5:-11.17,z10:17.62,z30:58.42,y5:2.76,y10:3.23,y30:3.71,cds:16.31,polrisk:91.82,
+   gdp_imf:{2026:1.3,2027:2.5,2028:2.4,2029:2.3,2030:2.3},
+   gdp_oecd:null,
+   cpi_imf:{2026:1.7,2027:1.8,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:null,
+   gross:{2026:31.5, 2027:31.0, 2028:30.0, 2029:29.0, 2030:28.2},
+   net:  {2026:24.4, 2027:24.1, 2028:23.5, 2029:22.8, 2030:22.3}},
+  {cc:'DK',name:'Denmark',       moodys:'Aaa', sp:'AAA', fitch:'AAA', cb_gdp:0.0,cb_debt:0.0,z2:-61.58,y2:2.26,z5:-51.89,z10:-36.78,z30:-17.82,y5:2.55,y10:2.85,y30:3.16,cds:8.97,polrisk:93.71,
+   gdp_imf:{2026:2.2,2027:1.6,2028:1.5,2029:1.5,2030:1.5},
+   gdp_oecd:null,
+   cpi_imf:{2026:2.1,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:null,
+   gross:{2026:29.1, 2027:29.2, 2028:29.4, 2029:29.9, 2030:30.4},
+   net:  {2026:-4.3, 2027:-4.1, 2028:-3.7, 2029:-3.2, 2030:-2.5}},
+  {cc:'CH',name:'Switzerland',   moodys:'Aaa', sp:'AAA', fitch:'AAA', cb_gdp:0.0,cb_debt:0.0,z2:-10.73,y2:0.08,z5:-16.04,z10:-18.84,z30:-32.68,y5:0.18,y10:0.36,y30:0.50,cds:63.50,polrisk:88.55,
+   gdp_imf:{2026:1.3,2027:1.1,2028:1.8,2029:1.2,2030:1.8},
+   gdp_oecd:null,
+   cpi_imf:{2026:0.6,2027:0.7,2028:0.7,2029:0.7,2030:0.7},
+   cpi_oecd:null,
+   gross:{2026:36.1, 2027:35.3, 2028:34.3, 2029:33.6, 2030:32.7},
+   net:  {2026:15.7, 2027:14.9, 2028:13.9, 2029:13.2, 2030:12.3}},
+  {cc:'KR',name:'South Korea',   moodys:'Aa2', sp:'AA',  fitch:'AA-', cb_gdp:1.5,cb_debt:1.5,z2:-9.49,y2:3.4,z5:1.95,z10:10.07,z30:56.49,y5:3.69,y10:3.81,y30:3.71,cds:34.34,polrisk:87.1,
+   gdp_imf:{2026:1.8,2027:2.2,2028:2.2,2029:2.0,2030:1.9},
+   gdp_oecd:{2026:1.7,2027:2.1},
+   cpi_imf:{2026:1.8,2027:2.0,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:{2026:2.7,2027:2.0},
+   gross:{2026:56.7, 2027:58.9, 2028:60.9, 2029:62.7, 2030:64.3},
+   net:  {2026:10.3, 2027:10.9, 2028:11.6, 2029:12.3, 2030:12.9}},
+  {cc:'SG',name:'Singapore',     moodys:'Aaa', sp:'AAA', fitch:'AAA', cb_gdp:null,cb_debt:null,z2:-4.14,y2:1.54,z5:-7.46,z10:-11.22,z30:-7.94,y5:1.86,y10:2.22,y30:2.35,cds:39.25,polrisk:95.11,
+   gdp_imf:{2026:1.8,2027:2.5,2028:2.5,2029:2.5,2030:2.5},
+   gdp_oecd:null,
+   cpi_imf:{2026:1.3,2027:1.9,2028:2.0,2029:2.0,2030:2.0},
+   cpi_oecd:null,
+   gross:{2026:176.3,2027:177.0,2028:177.8,2029:178.2,2030:178.7},
+   net:  {2026:null,2027:null,2028:null,2029:null,2030:null}},
+  {cc:'CN',name:'China',         moodys:'A1',  sp:'A+',  fitch:'A',   cb_gdp:2.1,cb_debt:9.0,z2:-21.86,y2:1.29,z5:-8.33,z10:4.35,z30:43.60,y5:1.53,y10:1.82,y30:2.37,cds:51.00,polrisk:46.59,
+   gdp_imf:{2026:4.2,2027:4.2,2028:4.0,2029:3.7,2030:3.4},
+   gdp_oecd:{2026:4.4,2027:4.3},
+   cpi_imf:{2026:0.7,2027:1.4,2028:1.8,2029:1.9,2030:2.0},
+   cpi_oecd:{2026:1.3,2027:1.1},
+   gross:{2026:102.3,2027:106.3,2028:109.7,2029:112.9,2030:116.1},
+   net:  {2026:null,2027:null,2028:null,2029:null,2030:null}},
+];
+RAW.forEach(c=>{c.avgScore=avgSc(c);});
+
+/* ══════════════════════════════════════════
+   SHARED HELPERS
+══════════════════════════════════════════ */
+function regress(xs,ys,deg){
+  const n=xs.length;if(n<3)return null;
+  if(deg===1){
+    const mx=xs.reduce((a,b)=>a+b,0)/n,my=ys.reduce((a,b)=>a+b,0)/n;
+    let num=0,den=0;
+    for(let i=0;i<n;i++){num+=(xs[i]-mx)*(ys[i]-my);den+=(xs[i]-mx)**2;}
+    if(den===0)return null;
+    const m=num/den,b=my-m*mx;
+    const pred=xs.map(x=>m*x+b);
+    const ssr=ys.reduce((a,y,i)=>a+(y-pred[i])**2,0),sst=ys.reduce((a,y)=>a+(y-my)**2,0);
+    return{r2:sst>0?1-ssr/sst:0,rmse:Math.sqrt(ssr/n),pred,fn:x=>m*x+b};
+  }
+  function mmul(A,B){return A.map(r=>B[0].map((_,j)=>r.reduce((s,_,k)=>s+r[k]*B[k][j],0)));}
+  function mT(A){return A[0].map((_,j)=>A.map(r=>r[j]));}
+  function minv(M){
+    const sz=M.length,A=M.map(r=>[...r]),I=Array.from({length:sz},(_,i)=>Array.from({length:sz},(_,j)=>i===j?1:0));
+    for(let c=0;c<sz;c++){
+      let mx=Math.abs(A[c][c]),pi=c;
+      for(let r=c+1;r<sz;r++)if(Math.abs(A[r][c])>mx){mx=Math.abs(A[r][c]);pi=r;}
+      [A[c],A[pi]]=[A[pi],A[c]];[I[c],I[pi]]=[I[pi],I[c]];
+      const d=A[c][c];if(Math.abs(d)<1e-12)return null;
+      for(let j=0;j<sz;j++){A[c][j]/=d;I[c][j]/=d;}
+      for(let r=0;r<sz;r++)if(r!==c){const f=A[r][c];for(let j=0;j<sz;j++){A[r][j]-=f*A[c][j];I[r][j]-=f*I[c][j];}}
+    }
+    return I;
+  }
+  const X=xs.map(x=>[1,x,x*x]),Xt=mT(X),XtX=mmul(Xt,X),XtXi=minv(XtX);
+  if(!XtXi)return null;
+  const coef=mmul(XtXi,mmul(Xt,ys.map(y=>[y]))).map(r=>r[0]);
+  const[a,b,c2]=coef,pred=xs.map(x=>a+b*x+c2*x*x);
+  const my=ys.reduce((a,b)=>a+b,0)/n;
+  const ssr=ys.reduce((a,y,i)=>a+(y-pred[i])**2,0),sst=ys.reduce((a,y)=>a+(y-my)**2,0);
+  return{r2:sst>0?1-ssr/sst:0,rmse:Math.sqrt(ssr/n),pred,fn:x=>a+b*x+c2*x*x};
+}
+
+function makeCrosshairPlugin(getChartPt){
+  return{id:'crosshair',afterDraw(chart){
+    const pt=getChartPt();if(!pt)return;
+    const{ctx,scales:{x,y},chartArea}=chart;
+    const px=x.getPixelForValue(pt.x),py=y.getPixelForValue(pt.y);
+    ctx.save();ctx.setLineDash([4,4]);ctx.lineWidth=1;
+    ctx.strokeStyle='rgba(255,255,255,0.18)';
+    ctx.beginPath();ctx.moveTo(px,chartArea.top);ctx.lineTo(px,chartArea.bottom);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(chartArea.left,py);ctx.lineTo(chartArea.right,py);ctx.stroke();
+    ctx.setLineDash([]);ctx.restore();
+  }};
+}
+
+function makeLabelPlugin(getActiveData,getIsBase,getIsExcl,getVal,yValFn){
+  return{id:'lbl',afterDraw(ch){
+    const{ctx,scales:{x,y}}=ch;
+    ctx.save();ctx.font='bold 10px "DM Mono",monospace';ctx.textBaseline='middle';
+    const draw=(arr,col)=>{
+      ctx.fillStyle=col;
+      arr.forEach(c=>{
+        const yv=getIsBase(c)?0:yValFn(c);
+        const xv=getActiveData(c);
+        if(yv==null||xv==null)return;
+        const px=x.getPixelForValue(xv),py=y.getPixelForValue(yv);
+        ctx.fillText(c.cc,px+9,py-2);
+      });
+    };
+    const all=RAW.filter(c=>getActiveData(c)!=null&&yValFn(c)!=null);
+    const inReg=all.filter(c=>!getIsExcl(c)&&!getIsBase(c));
+    const outReg=all.filter(c=>getIsExcl(c));
+    const basePts=RAW.filter(c=>getIsBase(c));
+    draw(inReg.filter(c=>EGB.has(c.cc)),'#4a8fe8');
+    draw(inReg.filter(c=>!EGB.has(c.cc)),'#2db87a');
+    draw(outReg,'#4a5060');
+    ctx.fillStyle='#4a8fe8';
+    basePts.forEach(c=>{
+      const xv=getActiveData(c);if(xv==null)return;
+      const px=x.getPixelForValue(xv),py=y.getPixelForValue(0);
+      ctx.fillText(c.cc,px+9,py-2);
+    });
+    ctx.restore();
+  }};
+}
+
+function rLabel(s){if(s==null)return'—';const r=Math.round(s*2)/2;return NL[r]||NL[Math.floor(s)]||s.toFixed(2);}
+
+function buildBaseSelector(selId,formulaId,currentBase,cb){
+  const sel=document.getElementById(selId);sel.innerHTML='';
+  RAW.forEach(c=>{
+    const opt=document.createElement('option');
+    opt.value=c.cc;opt.textContent=`${c.cc} — ${c.name}`;
+    if(c.cc===currentBase)opt.selected=true;
+    sel.appendChild(opt);
+  });
+  sel.onchange=()=>cb(sel.value);
+  updateFormula(formulaId,currentBase);
+}
+function updateFormula(id,base){
+  const bc=RAW.find(c=>c.cc===base);
+  document.getElementById(id).textContent=bc?`(country − ${bc.name}) × 100`:'';
+}
+
+function setStats(pfx,r2,n,rmse,fit){
+  const r2el=document.getElementById(pfx+'-s-r2');
+  r2el.textContent=r2!=null?r2.toFixed(3):'n/a';
+  r2el.className='stat-val'+(r2!=null&&r2>0.7?' good':'');
+  document.getElementById(pfx+'-s-n').textContent=n;
+  document.getElementById(pfx+'-s-rmse').textContent=rmse||'n/a';
+  document.getElementById(pfx+'-s-fit').textContent=fit;
+}
+
+function buildResidChart(canvasId,residData){
+  return new Chart(document.getElementById(canvasId),{
+    data:{labels:residData.map(d=>d.cc),
+      datasets:[{type:'bar',data:residData.map(d=>d.resid),
+        backgroundColor:residData.map(d=>d.resid>=0?(d.egb?'#e8a23a':'#c17a1a'):(d.egb?'#4a8fe8':'#2db87a')),
+        borderRadius:3,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:180},
+      layout:{padding:{top:4,right:8,bottom:0,left:8}},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw>0?'+':''}${ctx.raw.toFixed(1)}bp`},
+          backgroundColor:'#1a1e27',titleColor:'#8b91a1',bodyColor:'#e8eaf0',borderColor:'rgba(255,255,255,0.1)',borderWidth:1}},
+      scales:{
+        x:{grid:{display:false},border:{color:'rgba(255,255,255,0.08)'},
+          ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"}}},
+        y:{grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.08)'},
+          title:{display:true,text:'Residual (bp)',color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"}},
+          ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"},callback:v=>v+'bp'}}
+      }}
+  });
+}
+
+function scaleOpts(xLabel,yLabel,xMin,xMax,yMin,yMax,tickFmtFn){
+  return{
+    x:{min:xMin,max:xMax,grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.1)'},
+      title:{display:true,text:xLabel,color:'#555b6b',font:{size:11,family:"'DM Mono',monospace"}},
+      ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"}}},
+    y:{min:yMin,max:yMax,grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.1)'},
+      title:{display:true,text:yLabel,color:'#555b6b',font:{size:11,family:"'DM Mono',monospace"}},
+      ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"},callback:v=>tickFmtFn(v)}}
+  };
+}
+
+/* ══════════════════════════════════════════
+   TAB 1: RATINGS REGRESSION (R)
+══════════════════════════════════════════ */
+const R=(()=>{
+  let mode='zspread',tenor='2Y',fit='linear',base='DE',egbOnly=false;
+  let manualExcluded=new Set();
+  let scChart=null,rcChart=null,crosshairPt=null;
+
+  function isBase(c){return mode==='yspread'&&c.cc===base;}
+  function isEffExcl(c){if(manualExcluded.has(c.cc))return true;if(egbOnly&&!EGB.has(c.cc))return true;return false;}
+
+  function getY(c,t){return t==='2Y'?c.y2:t==='5Y'?c.y5:t==='10Y'?c.y10:c.y30;}
+  function getVal(c){
+    if(mode==='zspread')return c['z'+tenor.replace('Y','')+(tenor==='5Y'?'':tenor==='10Y'?'':'')];
+    const zk='z'+{5:'5',10:'10',30:'30'}[parseInt(tenor)];
+    if(mode==='zspread')return c[zk];
+    if(mode==='yield'){const y=getY(c,tenor);return y!=null?y*100:null;}
+    if(mode==='cds')return c.cds;
+    if(mode==='yspread'){
+      const bc=RAW.find(x=>x.cc===base);
+      const by=bc?getY(bc,tenor):null,cy=getY(c,tenor);
+      if(by==null||cy==null)return null;
+      return parseFloat(((cy-by)*100).toFixed(2));
+    }
+    return null;
+  }
+  function getZ(c){return tenor==='2Y'?c.z2:tenor==='5Y'?c.z5:tenor==='10Y'?c.z10:c.z30;}
+  function getValByMode(c){
+    if(mode==='zspread')return getZ(c);
+    if(mode==='yield'){const y=getY(c,tenor);return y!=null?y*100:null;}
+    if(mode==='cds')return c.cds;
+    if(mode==='yspread'){
+      const bc=RAW.find(x=>x.cc===base);
+      const by=bc?getY(bc,tenor):null,cy=getY(c,tenor);
+      if(by==null||cy==null)return null;
+      return parseFloat(((cy-by)*100).toFixed(2));
+    }
+    return null;
+  }
+  function yLbl(){
+    if(mode==='zspread')return'Z-spread (bp)';
+    if(mode==='yield')return'Yield (bp equiv)';
+    if(mode==='cds')return'CDS 5Y (bp)';
+    const bc=RAW.find(x=>x.cc===base);return`Yield spread vs ${bc?bc.cc:'?'} (bp)`;
+  }
+  function fmtV(v){if(v==null)return'—';if(mode==='yield')return(v/100).toFixed(3)+'%';return v.toFixed(1)+' bp';}
+  function tickFmt(v){if(mode==='yield')return(v/100).toFixed(2)+'%';return v.toFixed(0)+'bp';}
+
+  function updateHoverBox(pt){
+    const hb=document.getElementById('r-hover-box');
+    if(!pt){hb.style.display='none';return;}
+    const res=pt.pred!=null?(pt.y-pt.pred):null;
+    document.getElementById('r-hb-name').textContent=`${pt.name} (${pt.cc})`;
+    document.getElementById('r-hb-rating').textContent=`Rating: ${rLabel(pt.score)} (${pt.score!=null?pt.score.toFixed(2):'—'})`;
+    document.getElementById('r-hb-val').textContent=`${yLbl()}: ${fmtV(pt.y)}`;
+    const re=document.getElementById('r-hb-resid');
+    if(res!=null){re.textContent=`Residual: ${res>=0?'+':''}${res.toFixed(1)} bp`;re.style.color=res>=0?'#e8a23a':'#4a8fe8';}
+    else{re.textContent='';re.style.color='';}
+    hb.style.display='block';
+  }
+
+  function render(){
+    const allWithData=RAW.filter(c=>c.avgScore!=null&&getValByMode(c)!=null&&!isBase(c));
+    const basePts=RAW.filter(c=>isBase(c));
+    const inReg=allWithData.filter(c=>!isEffExcl(c));
+    const outReg=allWithData.filter(c=>isEffExcl(c));
+    const xs=inReg.map(c=>c.avgScore),ys=inReg.map(c=>getValByMode(c));
+    const deg=fit==='poly2'?2:1;
+    const reg=regress(xs,ys,deg);
+
+    const rmse=reg?(mode==='yield'?(reg.rmse/100).toFixed(3)+'%':reg.rmse.toFixed(1)+'bp'):null;
+    setStats('r',reg?reg.r2:null,inReg.length,rmse,fit==='linear'?'OLS linear':'OLS quad');
+
+    const allX=[...allWithData,...basePts].map(c=>c.avgScore);
+    const minX=Math.min(...allX)-0.5,maxX=Math.max(...allX)+0.5;
+    const lineData=[];
+    if(reg){for(let xv=minX;xv<=maxX;xv+=0.04)lineData.push({x:xv,y:reg.fn(xv)});}
+
+    const mkPt=(c,regFn)=>({x:c.avgScore,y:isBase(c)?0:getValByMode(c),cc:c.cc,name:c.name,score:c.avgScore,pred:regFn?regFn(c.avgScore):null});
+    const datasets=[
+      {type:'scatter',data:inReg.filter(c=>EGB.has(c.cc)).map(c=>mkPt(c,reg?reg.fn:null)),backgroundColor:'#4a8fe8',pointRadius:7,pointHoverRadius:9,borderColor:'transparent'},
+      {type:'scatter',data:inReg.filter(c=>!EGB.has(c.cc)).map(c=>mkPt(c,reg?reg.fn:null)),backgroundColor:'#2db87a',pointRadius:7,pointHoverRadius:9,borderColor:'transparent'},
+      {type:'scatter',data:outReg.map(c=>mkPt(c,null)),backgroundColor:'#2a2f3a',pointRadius:6,pointHoverRadius:8,borderWidth:1,borderColor:'#4a5060'},
+      {type:'scatter',data:basePts.map(c=>mkPt(c,null)),backgroundColor:'transparent',pointRadius:8,pointHoverRadius:10,borderWidth:2,borderColor:'#4a8fe8'},
+      {type:'line',data:lineData,borderColor:'#e8a23a',borderWidth:2,pointRadius:0,tension:0.3,fill:false},
+    ];
+
+    const allY=[...allWithData,...basePts].map(c=>isBase(c)?0:getValByMode(c)).filter(v=>v!=null);
+    const minY=Math.min(...allY),maxY=Math.max(...allY),padY=(maxY-minY)*0.12;
+
+    const crossPlugin=makeCrosshairPlugin(()=>crosshairPt);
+    const lblPlugin=makeLabelPlugin(c=>c.avgScore,isBase,isEffExcl,c=>c.avgScore,c=>getValByMode(c));
+
+    const xTicks={color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"},
+      callback:v=>{const r=Math.round(v*2)/2;return Math.abs(v-r)<0.04&&NL[r]?NL[r]:'';},stepSize:0.5};
+
+    const canv=document.getElementById('r-sc');
+    if(scChart)scChart.destroy();
+    scChart=new Chart(canv,{
+      data:{datasets},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:180},
+        layout:{padding:{top:16,right:24,bottom:8,left:36}},
+        plugins:{legend:{display:false},tooltip:{enabled:false}},
+        onHover:(evt,elements)=>{
+          crosshairPt=null;
+          if(elements&&elements.length>0){
+            const pt=scChart.data.datasets[elements[0].datasetIndex].data[elements[0].index];
+            if(pt&&pt.cc){crosshairPt={x:pt.x,y:pt.y};updateHoverBox(pt);}
+            else updateHoverBox(null);
+          }else updateHoverBox(null);
+          if(scChart)scChart.draw();
+        },
+        scales:{
+          x:{min:minX,max:maxX,grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.1)'},
+            title:{display:true,text:'Average rating (numeric score)',color:'#555b6b',font:{size:11,family:"'DM Mono',monospace"}},
+            ticks:xTicks},
+          y:{min:minY-padY,max:maxY+padY,grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.1)'},
+            title:{display:true,text:yLbl(),color:'#555b6b',font:{size:11,family:"'DM Mono',monospace"}},
+            ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"},callback:v=>tickFmt(v)}}
+        }
+      },
+      plugins:[crossPlugin,lblPlugin]
+    });
+    canv.onmouseleave=()=>{crosshairPt=null;updateHoverBox(null);if(scChart)scChart.draw();};
+
+    if(reg){
+      const rd=inReg.map((c,i)=>({cc:c.cc,resid:parseFloat((getValByMode(c)-reg.pred[i]).toFixed(1)),egb:EGB.has(c.cc)})).sort((a,b)=>a.resid-b.resid);
+      if(rcChart)rcChart.destroy();
+      rcChart=buildResidChart('r-rc',rd);
+    }else{if(rcChart){rcChart.destroy();rcChart=null;}}
+    buildPills();
+  }
+
+  function buildPills(){
+    const grid=document.getElementById('r-pills');grid.innerHTML='';
+    RAW.forEach(c=>{
+      const v=getValByMode(c),bm=isBase(c),noData=v==null&&!bm;
+      const effExcl=isEffExcl(c),egbFilt=egbOnly&&!EGB.has(c.cc)&&!manualExcluded.has(c.cc);
+      const btn=document.createElement('button');
+      const cls=['pill'];if(EGB.has(c.cc))cls.push('egb-pill');if(effExcl)cls.push('excl');if(bm)cls.push('base-mark');
+      btn.className=cls.join(' ');
+      btn.textContent=c.cc+(noData?' —':bm?' ◎':egbFilt?' ·':'');
+      if(noData)btn.style.opacity='0.3';
+      if(egbFilt)btn.style.borderStyle='dashed';
+      btn.onclick=()=>{if(noData||bm)return;manualExcluded.has(c.cc)?manualExcluded.delete(c.cc):manualExcluded.add(c.cc);render();};
+      grid.appendChild(btn);
+    });
+  }
+
+  return{
+    setMode(m,el){mode=m;document.querySelectorAll('#r-mseg .btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');
+      const bg=document.getElementById('r-base-group');bg.style.display=m==='yspread'?'flex':'none';if(m==='yspread')bg.style.flexDirection='column';
+      render();},
+    setTenor(t,el){tenor=t;document.querySelectorAll('#r-tseg .btn-sm').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setFit(f,el){fit=f;document.querySelectorAll('#r-fseg .btn-sm').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setBase(v){base=v;updateFormula('r-base-formula',v);render();},
+    toggleEGB(){egbOnly=!egbOnly;document.getElementById('r-egb-btn').classList.toggle('on',egbOnly);
+      document.getElementById('r-egb-hint').textContent=egbOnly?'Non-EGB excluded. Individual toggles apply.':'';render();},
+    init(){buildBaseSelector('r-base-sel','r-base-formula',base,v=>{base=v;updateFormula('r-base-formula',v);render();});render();}
+  };
+})();
+
+/* ══════════════════════════════════════════
+   TAB 2: DEBT REGRESSION (D)
+══════════════════════════════════════════ */
+const D=(()=>{
+  let debtType='gross',year=2026,mode='zspread',tenor='2Y',fit='linear',base='DE',egbOnly=false;
+  let manualExcluded=new Set();
+  let scChart=null,rcChart=null,crosshairPt=null;
+
+  function isBase(c){return mode==='yspread'&&c.cc===base;}
+  function isEffExcl(c){if(manualExcluded.has(c.cc))return true;if(egbOnly&&!EGB.has(c.cc))return true;return false;}
+
+  function getDebt(c){
+    const v=c[debtType]&&c[debtType][year];
+    return(v!=null&&v!==undefined)?v:null;
+  }
+  function getY(c,t){return t==='2Y'?c.y2:t==='5Y'?c.y5:t==='10Y'?c.y10:c.y30;}
+  function getZ(c){return tenor==='2Y'?c.z2:tenor==='5Y'?c.z5:tenor==='10Y'?c.z10:c.z30;}
+  function getYVal(c){
+    if(mode==='zspread')return getZ(c);
+    if(mode==='yield'){const y=getY(c,tenor);return y!=null?y*100:null;}
+    if(mode==='cds')return c.cds;
+    if(mode==='yspread'){
+      const bc=RAW.find(x=>x.cc===base);
+      const by=bc?getY(bc,tenor):null,cy=getY(c,tenor);
+      if(by==null||cy==null)return null;
+      return parseFloat(((cy-by)*100).toFixed(2));
+    }
+    return null;
+  }
+  function yLbl(){
+    if(mode==='zspread')return'Z-spread (bp)';
+    if(mode==='yield')return'Yield (bp equiv)';
+    if(mode==='cds')return'CDS 5Y (bp)';
+    const bc=RAW.find(x=>x.cc===base);return`Yield spread vs ${bc?bc.cc:'?'} (bp)`;
+  }
+  function xLbl(){return`${debtType==='gross'?'Gross':'Net'} gov't debt, ${year} (% GDP)`;}
+  function fmtV(v){if(v==null)return'—';if(mode==='yield')return(v/100).toFixed(3)+'%';return v.toFixed(1)+' bp';}
+  function tickFmt(v){if(mode==='yield')return(v/100).toFixed(2)+'%';return v.toFixed(0)+'bp';}
+
+  function updateHoverBox(pt){
+    const hb=document.getElementById('d-hover-box');
+    if(!pt){hb.style.display='none';return;}
+    const res=pt.pred!=null?(pt.y-pt.pred):null;
+    document.getElementById('d-hb-name').textContent=`${pt.name} (${pt.cc})`;
+    document.getElementById('d-hb-debt').textContent=`${debtType==='gross'?'Gross':'Net'} debt (${year}): ${pt.debt!=null?pt.debt.toFixed(1):'—'}% GDP`;
+    document.getElementById('d-hb-val').textContent=`${yLbl()}: ${fmtV(pt.y)}`;
+    const re=document.getElementById('d-hb-resid');
+    if(res!=null){re.textContent=`Residual: ${res>=0?'+':''}${res.toFixed(1)} bp`;re.style.color=res>=0?'#e8a23a':'#4a8fe8';}
+    else{re.textContent='';re.style.color='';}
+    const noteEl=document.getElementById('d-hb-note');
+    noteEl.textContent=pt.isGrossProxy?'† Net debt: using gross debt proxy':'';
+    hb.style.display='block';
+  }
+
+  function render(){
+    const allWithData=RAW.filter(c=>getDebt(c)!=null&&getYVal(c)!=null&&!isBase(c));
+    const basePts=RAW.filter(c=>isBase(c)&&getDebt(c)!=null);
+    const inReg=allWithData.filter(c=>!isEffExcl(c));
+    const outReg=allWithData.filter(c=>isEffExcl(c));
+    const xs=inReg.map(c=>getDebt(c)),ys=inReg.map(c=>getYVal(c));
+    const deg=fit==='poly2'?2:1;
+    const reg=regress(xs,ys,deg);
+
+    const rmse=reg?(mode==='yield'?(reg.rmse/100).toFixed(3)+'%':reg.rmse.toFixed(1)+'bp'):null;
+    setStats('d',reg?reg.r2:null,inReg.length,rmse,fit==='linear'?'OLS linear':'OLS quad');
+
+    const allDebt=[...allWithData,...basePts].map(c=>getDebt(c)).filter(v=>v!=null);
+    const minX=Math.min(...allDebt)-5,maxX=Math.max(...allDebt)+5;
+    const lineData=[];
+    if(reg){for(let xv=minX;xv<=maxX;xv+=0.5)lineData.push({x:xv,y:reg.fn(xv)});}
+
+    const mkPt=(c,regFn)=>({
+      x:getDebt(c),y:isBase(c)?0:getYVal(c),
+      cc:c.cc,name:c.name,debt:getDebt(c),
+      pred:regFn?regFn(getDebt(c)):null,
+      isGrossProxy:debtType==='net'&&c.grNetIsGross
+    });
+    const datasets=[
+      {type:'scatter',data:inReg.filter(c=>EGB.has(c.cc)).map(c=>mkPt(c,reg?reg.fn:null)),backgroundColor:'#4a8fe8',pointRadius:7,pointHoverRadius:9,borderColor:'transparent'},
+      {type:'scatter',data:inReg.filter(c=>!EGB.has(c.cc)).map(c=>mkPt(c,reg?reg.fn:null)),backgroundColor:'#2db87a',pointRadius:7,pointHoverRadius:9,borderColor:'transparent'},
+      {type:'scatter',data:outReg.map(c=>mkPt(c,null)),backgroundColor:'#2a2f3a',pointRadius:6,pointHoverRadius:8,borderWidth:1,borderColor:'#4a5060'},
+      {type:'scatter',data:basePts.map(c=>({...mkPt(c,null),y:0})),backgroundColor:'transparent',pointRadius:8,pointHoverRadius:10,borderWidth:2,borderColor:'#4a8fe8'},
+      {type:'line',data:lineData,borderColor:'#e8a23a',borderWidth:2,pointRadius:0,tension:0.3,fill:false},
+    ];
+
+    const allY=[...allWithData,...basePts].map(c=>isBase(c)?0:getYVal(c)).filter(v=>v!=null);
+    const minY=Math.min(...allY),maxY=Math.max(...allY),padY=(maxY-minY)*0.12;
+
+    const crossPlugin=makeCrosshairPlugin(()=>crosshairPt);
+    const lblPlugin=makeLabelPlugin(c=>getDebt(c),isBase,isEffExcl,c=>getDebt(c),c=>getYVal(c));
+
+    const canv=document.getElementById('d-sc');
+    if(scChart)scChart.destroy();
+    scChart=new Chart(canv,{
+      data:{datasets},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:180},
+        layout:{padding:{top:16,right:24,bottom:8,left:36}},
+        plugins:{legend:{display:false},tooltip:{enabled:false}},
+        onHover:(evt,elements)=>{
+          crosshairPt=null;
+          if(elements&&elements.length>0){
+            const pt=scChart.data.datasets[elements[0].datasetIndex].data[elements[0].index];
+            if(pt&&pt.cc){crosshairPt={x:pt.x,y:pt.y};updateHoverBox(pt);}
+            else updateHoverBox(null);
+          }else updateHoverBox(null);
+          if(scChart)scChart.draw();
+        },
+        scales:{
+          x:{min:minX,max:maxX,grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.1)'},
+            title:{display:true,text:xLbl(),color:'#555b6b',font:{size:11,family:"'DM Mono',monospace"}},
+            ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"},callback:v=>v+'%'}},
+          y:{min:minY-padY,max:maxY+padY,grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.1)'},
+            title:{display:true,text:yLbl(),color:'#555b6b',font:{size:11,family:"'DM Mono',monospace"}},
+            ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"},callback:v=>tickFmt(v)}}
+        }
+      },
+      plugins:[crossPlugin,lblPlugin]
+    });
+    canv.onmouseleave=()=>{crosshairPt=null;updateHoverBox(null);if(scChart)scChart.draw();};
+
+    if(reg){
+      const rd=inReg.map((c,i)=>({cc:c.cc,resid:parseFloat((getYVal(c)-reg.pred[i]).toFixed(1)),egb:EGB.has(c.cc)})).sort((a,b)=>a.resid-b.resid);
+      if(rcChart)rcChart.destroy();
+      rcChart=buildResidChart('d-rc',rd);
+    }else{if(rcChart){rcChart.destroy();rcChart=null;}}
+    buildPills();
+  }
+
+  function buildPills(){
+    const grid=document.getElementById('d-pills');grid.innerHTML='';
+    RAW.forEach(c=>{
+      const debt=getDebt(c),yv=getYVal(c),bm=isBase(c);
+      const noData=(debt==null||yv==null)&&!bm;
+      const effExcl=isEffExcl(c),egbFilt=egbOnly&&!EGB.has(c.cc)&&!manualExcluded.has(c.cc);
+      const isProxy=debtType==='net'&&c.grNetIsGross;
+      const btn=document.createElement('button');
+      const cls=['pill'];if(EGB.has(c.cc))cls.push('egb-pill');if(effExcl)cls.push('excl');if(bm)cls.push('base-mark');
+      btn.className=cls.join(' ');
+      btn.textContent=c.cc+(noData?' —':bm?' ◎':isProxy?' †':egbFilt?' ·':'');
+      btn.title=isProxy?'Net debt: using gross debt as proxy':'';
+      if(noData)btn.style.opacity='0.3';
+      if(egbFilt)btn.style.borderStyle='dashed';
+      btn.onclick=()=>{if(noData||bm)return;manualExcluded.has(c.cc)?manualExcluded.delete(c.cc):manualExcluded.add(c.cc);render();};
+      grid.appendChild(btn);
+    });
+  }
+
+  return{
+    setDebtType(t,el){debtType=t;document.querySelectorAll('#d-dtype-seg .btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setYear(y,el){year=y;document.querySelectorAll('#d-yseg .year-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setMode(m,el){mode=m;document.querySelectorAll('#d-mseg .btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');
+      const bg=document.getElementById('d-base-group');bg.style.display=m==='yspread'?'flex':'none';if(m==='yspread')bg.style.flexDirection='column';
+      render();},
+    setTenor(t,el){tenor=t;document.querySelectorAll('#d-tseg .btn-sm').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setFit(f,el){fit=f;document.querySelectorAll('#d-fseg .btn-sm').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setBase(v){base=v;updateFormula('d-base-formula',v);render();},
+    toggleEGB(){egbOnly=!egbOnly;document.getElementById('d-egb-btn').classList.toggle('on',egbOnly);
+      document.getElementById('d-egb-hint').textContent=egbOnly?'Non-EGB excluded. Individual toggles apply.':'';render();},
+    init(){buildBaseSelector('d-base-sel','d-base-formula',base,v=>{base=v;updateFormula('d-base-formula',v);render();});render();}
+  };
+})();
+
+/* ══════════════════════════════════════════
+   TAB 3: POLITICAL RISK REGRESSION (P)
+══════════════════════════════════════════ */
+const P=(()=>{
+  let mode='zspread',tenor='2Y',fit='linear',base='DE',egbOnly=false;
+  let manualExcluded=new Set();
+  let scChart=null,rcChart=null,crosshairPt=null;
+
+  function isBase(c){return mode==='yspread'&&c.cc===base;}
+  function isEffExcl(c){if(manualExcluded.has(c.cc))return true;if(egbOnly&&!EGB.has(c.cc))return true;return false;}
+  function getY(c,t){return t==='2Y'?c.y2:t==='5Y'?c.y5:t==='10Y'?c.y10:c.y30;}
+  function getZ(c){return tenor==='2Y'?c.z2:tenor==='5Y'?c.z5:tenor==='10Y'?c.z10:c.z30;}
+  function getYVal(c){
+    if(mode==='zspread')return getZ(c);
+    if(mode==='yield'){const y=getY(c,tenor);return y!=null?y*100:null;}
+    if(mode==='cds')return c.cds;
+    if(mode==='yspread'){
+      const bc=RAW.find(x=>x.cc===base);
+      const by=bc?getY(bc,tenor):null,cy=getY(c,tenor);
+      if(by==null||cy==null)return null;
+      return parseFloat(((cy-by)*100).toFixed(2));
+    }
+    return null;
+  }
+  function yLbl(){
+    if(mode==='zspread')return'Z-spread (bp)';
+    if(mode==='yield')return'Yield (bp equiv)';
+    if(mode==='cds')return'CDS 5Y (bp)';
+    const bc=RAW.find(x=>x.cc===base);return'Yield spread vs '+(bc?bc.cc:'?')+' (bp)';
+  }
+  function fmtV(v){if(v==null)return'—';if(mode==='yield')return(v/100).toFixed(3)+'%';return v.toFixed(1)+' bp';}
+  function tickFmt(v){if(mode==='yield')return(v/100).toFixed(2)+'%';return v.toFixed(0)+'bp';}
+
+  function updateHoverBox(pt){
+    const hb=document.getElementById('p-hover-box');
+    if(!pt){hb.style.display='none';return;}
+    const res=pt.pred!=null?(pt.y-pt.pred):null;
+    document.getElementById('p-hb-name').textContent=pt.name+' ('+pt.cc+')';
+    document.getElementById('p-hb-risk').textContent='Pol. stability: '+(pt.risk!=null?pt.risk.toFixed(2):'—')+' / 100';
+    document.getElementById('p-hb-val').textContent=yLbl()+': '+fmtV(pt.y);
+    const re=document.getElementById('p-hb-resid');
+    if(res!=null){re.textContent='Residual: '+(res>=0?'+':'')+res.toFixed(1)+' bp';re.style.color=res>=0?'#e8a23a':'#4a8fe8';}
+    else{re.textContent='';re.style.color='';}
+    hb.style.display='block';
+  }
+
+  function render(){
+    const allWithData=RAW.filter(c=>c.polrisk!=null&&getYVal(c)!=null&&!isBase(c));
+    const basePts=RAW.filter(c=>isBase(c)&&c.polrisk!=null);
+    const inReg=allWithData.filter(c=>!isEffExcl(c));
+    const outReg=allWithData.filter(c=>isEffExcl(c));
+    const xs=inReg.map(c=>c.polrisk),ys=inReg.map(c=>getYVal(c));
+    const deg=fit==='poly2'?2:1;
+    const reg=regress(xs,ys,deg);
+
+    const rmse=reg?(mode==='yield'?(reg.rmse/100).toFixed(3)+'%':reg.rmse.toFixed(1)+'bp'):null;
+    setStats('p',reg?reg.r2:null,inReg.length,rmse,fit==='linear'?'OLS linear':'OLS quad');
+
+    const allX=[...allWithData,...basePts].map(c=>c.polrisk);
+    const minX=Math.max(0,Math.min(...allX)-3),maxX=Math.min(100,Math.max(...allX)+3);
+    const lineData=[];
+    if(reg){for(let xv=minX;xv<=maxX;xv+=0.2)lineData.push({x:xv,y:reg.fn(xv)});}
+
+    const mkPt=(c,regFn)=>({
+      x:c.polrisk,y:isBase(c)?0:getYVal(c),
+      cc:c.cc,name:c.name,risk:c.polrisk,
+      pred:regFn?regFn(c.polrisk):null
+    });
+    const datasets=[
+      {type:'scatter',data:inReg.filter(c=>EGB.has(c.cc)).map(c=>mkPt(c,reg?reg.fn:null)),
+       backgroundColor:'#4a8fe8',pointRadius:7,pointHoverRadius:9,borderColor:'transparent'},
+      {type:'scatter',data:inReg.filter(c=>!EGB.has(c.cc)).map(c=>mkPt(c,reg?reg.fn:null)),
+       backgroundColor:'#2db87a',pointRadius:7,pointHoverRadius:9,borderColor:'transparent'},
+      {type:'scatter',data:outReg.map(c=>mkPt(c,null)),
+       backgroundColor:'#2a2f3a',pointRadius:6,pointHoverRadius:8,borderWidth:1,borderColor:'#4a5060'},
+      {type:'scatter',data:basePts.map(c=>({...mkPt(c,null),y:0})),
+       backgroundColor:'transparent',pointRadius:8,pointHoverRadius:10,borderWidth:2,borderColor:'#4a8fe8'},
+      {type:'line',data:lineData,
+       borderColor:'#e8a23a',borderWidth:2,pointRadius:0,tension:0.3,fill:false},
+    ];
+    const allY=[...allWithData,...basePts].map(c=>isBase(c)?0:getYVal(c)).filter(v=>v!=null);
+    const minY=Math.min(...allY),maxY=Math.max(...allY),padY=(maxY-minY)*0.12;
+
+    const crossPlugin=makeCrosshairPlugin(()=>crosshairPt);
+    const lblPlugin=makeLabelPlugin(c=>c.polrisk,isBase,isEffExcl,c=>c.polrisk,c=>getYVal(c));
+
+    const canv=document.getElementById('p-sc');
+    if(scChart)scChart.destroy();
+    scChart=new Chart(canv,{
+      data:{datasets},
+      options:{
+        responsive:true,maintainAspectRatio:false,animation:{duration:180},
+        layout:{padding:{top:16,right:24,bottom:8,left:36}},
+        plugins:{legend:{display:false},tooltip:{enabled:false}},
+        onHover:(evt,elements)=>{
+          crosshairPt=null;
+          if(elements&&elements.length>0){
+            const pt=scChart.data.datasets[elements[0].datasetIndex].data[elements[0].index];
+            if(pt&&pt.cc){crosshairPt={x:pt.x,y:pt.y};updateHoverBox(pt);}
+            else updateHoverBox(null);
+          }else updateHoverBox(null);
+          if(scChart)scChart.draw();
+        },
+        scales:{
+          x:{min:minX,max:maxX,
+            grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.1)'},
+            title:{display:true,text:'Political stability score (100 = most stable)',color:'#555b6b',font:{size:11,family:"'DM Mono',monospace"}},
+            ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"}}},
+          y:{min:minY-padY,max:maxY+padY,
+            grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.1)'},
+            title:{display:true,text:yLbl(),color:'#555b6b',font:{size:11,family:"'DM Mono',monospace"}},
+            ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"},callback:v=>tickFmt(v)}}
+        }
+      },
+      plugins:[crossPlugin,lblPlugin]
+    });
+    canv.onmouseleave=()=>{crosshairPt=null;updateHoverBox(null);if(scChart)scChart.draw();};
+
+    if(reg){
+      const rd=inReg.map((c,i)=>({cc:c.cc,resid:parseFloat((getYVal(c)-reg.pred[i]).toFixed(1)),egb:EGB.has(c.cc)})).sort((a,b)=>a.resid-b.resid);
+      if(rcChart)rcChart.destroy();
+      rcChart=buildResidChart('p-rc',rd);
+    }else{if(rcChart){rcChart.destroy();rcChart=null;}}
+    buildPills();
+  }
+
+  function buildPills(){
+    const grid=document.getElementById('p-pills');grid.innerHTML='';
+    RAW.forEach(c=>{
+      const yv=getYVal(c),bm=isBase(c);
+      const noData=(c.polrisk==null||yv==null)&&!bm;
+      const effExcl=isEffExcl(c),egbFilt=egbOnly&&!EGB.has(c.cc)&&!manualExcluded.has(c.cc);
+      const btn=document.createElement('button');
+      const cls=['pill'];
+      if(EGB.has(c.cc))cls.push('egb-pill');
+      if(effExcl)cls.push('excl');
+      if(bm)cls.push('base-mark');
+      btn.className=cls.join(' ');
+      btn.textContent=c.cc+(noData?' —':bm?' ◎':egbFilt?' ·':'');
+      if(noData)btn.style.opacity='0.3';
+      if(egbFilt)btn.style.borderStyle='dashed';
+      btn.onclick=()=>{
+        if(noData||bm)return;
+        manualExcluded.has(c.cc)?manualExcluded.delete(c.cc):manualExcluded.add(c.cc);
+        render();
+      };
+      grid.appendChild(btn);
+    });
+  }
+
+  return{
+    setMode(m,el){mode=m;document.querySelectorAll('#p-mseg .btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');
+      const bg=document.getElementById('p-base-group');bg.style.display=m==='yspread'?'flex':'none';if(m==='yspread')bg.style.flexDirection='column';render();},
+    setTenor(t,el){tenor=t;document.querySelectorAll('#p-tseg .btn-sm').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setFit(f,el){fit=f;document.querySelectorAll('#p-fseg .btn-sm').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setBase(v){base=v;updateFormula('p-base-formula',v);render();},
+    toggleEGB(){egbOnly=!egbOnly;document.getElementById('p-egb-btn').classList.toggle('on',egbOnly);
+      document.getElementById('p-egb-hint').textContent=egbOnly?'Non-EGB excluded. Individual toggles apply.':'';render();},
+    render,
+    init(){buildBaseSelector('p-base-sel','p-base-formula',base,v=>{base=v;updateFormula('p-base-formula',v);render();});render();}
+  };
+})();
+
+/* ══════════════════════════════════════════
+   MACRO TAB FACTORY — shared logic for GDP & Inflation tabs
+   pfx = 'gdp' | 'inf', dataKey = 'gdp' | 'cpi', xLabel fn
+══════════════════════════════════════════ */
+function makeMacroTab(pfx, dataKey){
+  const IMF_YEARS=[2026,2027,2028,2029,2030];
+  const OECD_YEARS=[2026,2027];
+
+  let src='imf', year=2026, mode='zspread', tenor='2Y', fit='linear', base='DE', egbOnly=false;
+  let manualExcluded=new Set();
+  let scChart=null, rcChart=null, crosshairPt=null;
+
+  function isBase(c){return mode==='yspread'&&c.cc===base;}
+  function isEffExcl(c){if(manualExcluded.has(c.cc))return true;if(egbOnly&&!EGB.has(c.cc))return true;return false;}
+
+  function getMacro(c){
+    const key=dataKey+'_'+src;
+    const obj=c[key];
+    if(!obj) return null;
+    const v=obj[year];
+    return (v!=null)?v:null;
+  }
+  function getYv(c,t){return t==='2Y'?c.y2:t==='5Y'?c.y5:t==='10Y'?c.y10:c.y30;}
+  function getZ(c){return tenor==='2Y'?c.z2:tenor==='5Y'?c.z5:tenor==='10Y'?c.z10:c.z30;}
+  function getYVal(c){
+    if(mode==='zspread')return getZ(c);
+    if(mode==='yield'){const y=getYv(c,tenor);return y!=null?y*100:null;}
+    if(mode==='cds')return c.cds;
+    if(mode==='yspread'){
+      const bc=RAW.find(x=>x.cc===base);
+      const by=bc?getYv(bc,tenor):null,cy=getYv(c,tenor);
+      if(by==null||cy==null)return null;
+      return parseFloat(((cy-by)*100).toFixed(2));
+    }
+    return null;
+  }
+  function yLbl(){
+    if(mode==='zspread')return'Z-spread (bp)';
+    if(mode==='yield')return'Yield (bp equiv)';
+    if(mode==='cds')return'CDS 5Y (bp)';
+    const bc=RAW.find(x=>x.cc===base);return'Yield spread vs '+(bc?bc.cc:'?')+' (bp)';
+  }
+  function xLbl(){
+    const metric=dataKey==='gdp'?'Real GDP growth':'Headline CPI';
+    const srcLabel=src==='imf'?'IMF WEO Apr 2026':'OECD Mar 2026';
+    return metric+', '+year+' (% · '+srcLabel+')';
+  }
+  function fmtV(v){if(v==null)return'—';if(mode==='yield')return(v/100).toFixed(3)+'%';return v.toFixed(1)+' bp';}
+  function tickFmt(v){if(mode==='yield')return(v/100).toFixed(2)+'%';return v.toFixed(0)+'bp';}
+
+  function buildYearBtns(){
+    const cont=document.getElementById(pfx+'-yr-seg');
+    cont.innerHTML='';
+    const years=src==='imf'?IMF_YEARS:OECD_YEARS;
+    if(!years.includes(year)) year=years[0];
+    years.forEach(y=>{
+      const b=document.createElement('button');
+      b.className='year-btn'+(y===year?' on':'');
+      b.textContent=y;
+      b.onclick=()=>{year=y;cont.querySelectorAll('.year-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');render();};
+      cont.appendChild(b);
+    });
+  }
+
+  function updateHoverBox(pt){
+    const hb=document.getElementById(pfx+'-hover-box');
+    if(!pt){hb.style.display='none';return;}
+    const res=pt.pred!=null?(pt.y-pt.pred):null;
+    document.getElementById(pfx+'-hb-name').textContent=pt.name+' ('+pt.cc+')';
+    document.getElementById(pfx+'-hb-x').textContent=xLbl().split('(')[0].trim()+': '+(pt.xv!=null?pt.xv.toFixed(1):'—')+'%';
+    document.getElementById(pfx+'-hb-val').textContent=yLbl()+': '+fmtV(pt.y);
+    const re=document.getElementById(pfx+'-hb-resid');
+    if(res!=null){re.textContent='Residual: '+(res>=0?'+':'')+res.toFixed(1)+' bp';re.style.color=res>=0?'#e8a23a':'#4a8fe8';}
+    else{re.textContent='';re.style.color='';}
+    hb.style.display='block';
+  }
+
+  function render(){
+    const allWithData=RAW.filter(c=>getMacro(c)!=null&&getYVal(c)!=null&&!isBase(c));
+    const basePts=RAW.filter(c=>isBase(c)&&getMacro(c)!=null);
+    const inReg=allWithData.filter(c=>!isEffExcl(c));
+    const outReg=allWithData.filter(c=>isEffExcl(c));
+    const xs=inReg.map(c=>getMacro(c)), ys=inReg.map(c=>getYVal(c));
+    const deg=fit==='poly2'?2:1;
+    const reg=regress(xs,ys,deg);
+
+    const rmse=reg?(mode==='yield'?(reg.rmse/100).toFixed(3)+'%':reg.rmse.toFixed(1)+'bp'):null;
+    setStats(pfx,reg?reg.r2:null,inReg.length,rmse,fit==='linear'?'OLS linear':'OLS quad');
+
+    const allX=[...allWithData,...basePts].map(c=>getMacro(c)).filter(v=>v!=null);
+    const pad=0.2;
+    const minX=Math.min(...allX)-pad, maxX=Math.max(...allX)+pad;
+    const lineData=[];
+    if(reg){for(let xv=minX;xv<=maxX;xv+=0.05)lineData.push({x:xv,y:reg.fn(xv)});}
+
+    const mkPt=(c,regFn)=>({
+      x:getMacro(c), y:isBase(c)?0:getYVal(c),
+      cc:c.cc, name:c.name, xv:getMacro(c),
+      pred:regFn?regFn(getMacro(c)):null
+    });
+
+    const datasets=[
+      {type:'scatter',data:inReg.filter(c=>EGB.has(c.cc)).map(c=>mkPt(c,reg?reg.fn:null)),
+       backgroundColor:'#4a8fe8',pointRadius:7,pointHoverRadius:9,borderColor:'transparent'},
+      {type:'scatter',data:inReg.filter(c=>!EGB.has(c.cc)).map(c=>mkPt(c,reg?reg.fn:null)),
+       backgroundColor:'#2db87a',pointRadius:7,pointHoverRadius:9,borderColor:'transparent'},
+      {type:'scatter',data:outReg.map(c=>mkPt(c,null)),
+       backgroundColor:'#2a2f3a',pointRadius:6,pointHoverRadius:8,borderWidth:1,borderColor:'#4a5060'},
+      {type:'scatter',data:basePts.map(c=>({...mkPt(c,null),y:0})),
+       backgroundColor:'transparent',pointRadius:8,pointHoverRadius:10,borderWidth:2,borderColor:'#4a8fe8'},
+      {type:'line',data:lineData,
+       borderColor:'#e8a23a',borderWidth:2,pointRadius:0,tension:0.3,fill:false},
+    ];
+
+    const allY=[...allWithData,...basePts].map(c=>isBase(c)?0:getYVal(c)).filter(v=>v!=null);
+    const minY=Math.min(...allY), maxY=Math.max(...allY), padY=(maxY-minY)*0.12;
+
+    const crossPlugin=makeCrosshairPlugin(()=>crosshairPt);
+    const lblPlugin=makeLabelPlugin(c=>getMacro(c),isBase,isEffExcl,c=>getMacro(c),c=>getYVal(c));
+
+    const canv=document.getElementById(pfx+'-sc');
+    if(scChart)scChart.destroy();
+    scChart=new Chart(canv,{
+      data:{datasets},
+      options:{
+        responsive:true,maintainAspectRatio:false,animation:{duration:180},
+        layout:{padding:{top:16,right:24,bottom:8,left:36}},
+        plugins:{legend:{display:false},tooltip:{enabled:false}},
+        onHover:(evt,elements)=>{
+          crosshairPt=null;
+          if(elements&&elements.length>0){
+            const pt=scChart.data.datasets[elements[0].datasetIndex].data[elements[0].index];
+            if(pt&&pt.cc){crosshairPt={x:pt.x,y:pt.y};updateHoverBox(pt);}
+            else updateHoverBox(null);
+          }else updateHoverBox(null);
+          if(scChart)scChart.draw();
+        },
+        scales:{
+          x:{min:minX,max:maxX,
+            grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.1)'},
+            title:{display:true,text:xLbl(),color:'#555b6b',font:{size:11,family:"'DM Mono',monospace"}},
+            ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"},callback:v=>v.toFixed(1)+'%'}},
+          y:{min:minY-padY,max:maxY+padY,
+            grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.1)'},
+            title:{display:true,text:yLbl(),color:'#555b6b',font:{size:11,family:"'DM Mono',monospace"}},
+            ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"},callback:v=>tickFmt(v)}}
+        }
+      },
+      plugins:[crossPlugin,lblPlugin]
+    });
+    canv.onmouseleave=()=>{crosshairPt=null;updateHoverBox(null);if(scChart)scChart.draw();};
+
+    if(reg){
+      const rd=inReg.map((c,i)=>({cc:c.cc,resid:parseFloat((getYVal(c)-reg.pred[i]).toFixed(1)),egb:EGB.has(c.cc)})).sort((a,b)=>a.resid-b.resid);
+      if(rcChart)rcChart.destroy();
+      rcChart=buildResidChart(pfx+'-rc',rd);
+    }else{if(rcChart){rcChart.destroy();rcChart=null;}}
+    buildPills();
+  }
+
+  function buildPills(){
+    const grid=document.getElementById(pfx+'-pills');grid.innerHTML='';
+    RAW.forEach(c=>{
+      const xv=getMacro(c), yv=getYVal(c), bm=isBase(c);
+      const noData=(xv==null||yv==null)&&!bm;
+      const effExcl=isEffExcl(c), egbFilt=egbOnly&&!EGB.has(c.cc)&&!manualExcluded.has(c.cc);
+      const btn=document.createElement('button');
+      const cls=['pill'];
+      if(EGB.has(c.cc))cls.push('egb-pill');
+      if(effExcl)cls.push('excl');
+      if(bm)cls.push('base-mark');
+      btn.className=cls.join(' ');
+      btn.textContent=c.cc+(noData?' —':bm?' ◎':egbFilt?' ·':'');
+      if(noData)btn.style.opacity='0.3';
+      if(egbFilt)btn.style.borderStyle='dashed';
+      btn.onclick=()=>{
+        if(noData||bm)return;
+        manualExcluded.has(c.cc)?manualExcluded.delete(c.cc):manualExcluded.add(c.cc);
+        render();
+      };
+      grid.appendChild(btn);
+    });
+  }
+
+  return{
+    setSrc(s,el){
+      src=s;
+      document.querySelectorAll('#'+pfx+'-src-seg .btn').forEach(b=>b.classList.remove('on'));
+      el.classList.add('on');
+      buildYearBtns();
+      render();
+    },
+    setMode(m,el){
+      mode=m;
+      document.querySelectorAll('#'+pfx+'-mseg .btn').forEach(b=>b.classList.remove('on'));
+      el.classList.add('on');
+      const bg=document.getElementById(pfx+'-base-group');
+      bg.style.display=m==='yspread'?'flex':'none';
+      if(m==='yspread')bg.style.flexDirection='column';
+      render();
+    },
+    setTenor(t,el){tenor=t;document.querySelectorAll('#'+pfx+'-tseg .btn-sm').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setFit(f,el){fit=f;document.querySelectorAll('#'+pfx+'-fseg .btn-sm').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setBase(v){base=v;updateFormula(pfx+'-base-formula',v);render();},
+    toggleEGB(){
+      egbOnly=!egbOnly;
+      document.getElementById(pfx+'-egb-btn').classList.toggle('on',egbOnly);
+      document.getElementById(pfx+'-egb-hint').textContent=egbOnly?'Non-EGB excluded. Individual toggles apply.':'';
+      render();
+    },
+    render,
+    init(){
+      buildBaseSelector(pfx+'-base-sel',pfx+'-base-formula',base,v=>{base=v;updateFormula(pfx+'-base-formula',v);render();});
+      buildYearBtns();
+      render();
+    }
+  };
+}
+
+const GDP=makeMacroTab('gdp','gdp');
+const INF=makeMacroTab('inf','cpi');
+
+/* ══════════════════════════════════════════
+   TAB 6: CENTRAL BANK HOLDINGS (CB)
+══════════════════════════════════════════ */
+const CB=(()=>{
+  let xMetric='gdp', mode='zspread', tenor='2Y', fit='linear', base='DE', egbOnly=false;
+  let manualExcluded=new Set();
+  let scChart=null, rcChart=null, crosshairPt=null;
+
+  function isBase(c){return mode==='yspread'&&c.cc===base;}
+  function isEffExcl(c){if(manualExcluded.has(c.cc))return true;if(egbOnly&&!EGB.has(c.cc))return true;return false;}
+
+  function getX(c){return xMetric==='gdp'?c.cb_gdp:c.cb_debt;}
+  function getYv(c,t){return t==='2Y'?c.y2:t==='5Y'?c.y5:t==='10Y'?c.y10:c.y30;}
+  function getZv(c){return tenor==='2Y'?c.z2:tenor==='5Y'?c.z5:tenor==='10Y'?c.z10:c.z30;}
+  function getYVal(c){
+    if(mode==='zspread')return getZv(c);
+    if(mode==='yield'){const y=getYv(c,tenor);return y!=null?y*100:null;}
+    if(mode==='cds')return c.cds;
+    if(mode==='yspread'){
+      const bc=RAW.find(x=>x.cc===base);
+      const by=bc?getYv(bc,tenor):null, cy=getYv(c,tenor);
+      if(by==null||cy==null)return null;
+      return parseFloat(((cy-by)*100).toFixed(2));
+    }
+    return null;
+  }
+  function yLbl(){
+    if(mode==='zspread')return'Z-spread (bp)';
+    if(mode==='yield')return'Yield (bp equiv)';
+    if(mode==='cds')return'CDS 5Y (bp)';
+    const bc=RAW.find(x=>x.cc===base);return'Yield spread vs '+(bc?bc.cc:'?')+' (bp)';
+  }
+  function xLbl(){return xMetric==='gdp'?'CB holdings % GDP':'CB holdings % govt debt outstanding';}
+  function fmtV(v){if(v==null)return'—';if(mode==='yield')return(v/100).toFixed(3)+'%';return v.toFixed(1)+' bp';}
+  function tickFmt(v){if(mode==='yield')return(v/100).toFixed(2)+'%';return v.toFixed(0)+'bp';}
+
+  // Countries with approximate/zero data for tooltip note
+  const APPROX=new Set(['US','AU','NZ','SE','KR','CN']);
+  const ZERO=new Set(['DK','NO','CH']);
+
+  function updateHoverBox(pt){
+    const hb=document.getElementById('cb-hover-box');
+    if(!pt){hb.style.display='none';return;}
+    const res=pt.pred!=null?(pt.y-pt.pred):null;
+    document.getElementById('cb-hb-name').textContent=pt.name+' ('+pt.cc+')';
+    document.getElementById('cb-hb-cb').textContent=xLbl()+': '+(pt.xv!=null?pt.xv.toFixed(1):'—')+'%';
+    document.getElementById('cb-hb-val').textContent=yLbl()+': '+fmtV(pt.y);
+    const re=document.getElementById('cb-hb-resid');
+    if(res!=null){re.textContent='Residual: '+(res>=0?'+':'')+res.toFixed(1)+' bp';re.style.color=res>=0?'#e8a23a':'#4a8fe8';}
+    else{re.textContent='';re.style.color='';}
+    const noteEl=document.getElementById('cb-hb-note');
+    if(APPROX.has(pt.cc))noteEl.textContent='~ approximate figure';
+    else if(ZERO.has(pt.cc))noteEl.textContent='QT complete — zero holdings';
+    else noteEl.textContent='';
+    hb.style.display='block';
+  }
+
+  function render(){
+    const allWithData=RAW.filter(c=>getX(c)!=null&&getYVal(c)!=null&&!isBase(c));
+    const basePts=RAW.filter(c=>isBase(c)&&getX(c)!=null);
+    const inReg=allWithData.filter(c=>!isEffExcl(c));
+    const outReg=allWithData.filter(c=>isEffExcl(c));
+    const xs=inReg.map(c=>getX(c)), ys=inReg.map(c=>getYVal(c));
+    const deg=fit==='poly2'?2:1;
+    const reg=regress(xs,ys,deg);
+
+    const rmse=reg?(mode==='yield'?(reg.rmse/100).toFixed(3)+'%':reg.rmse.toFixed(1)+'bp'):null;
+    setStats('cb',reg?reg.r2:null,inReg.length,rmse,fit==='linear'?'OLS linear':'OLS quad');
+
+    const allX=[...allWithData,...basePts].map(c=>getX(c)).filter(v=>v!=null);
+    const minX=Math.max(0,Math.min(...allX)-2), maxX=Math.max(...allX)+2;
+    const lineData=[];
+    if(reg){for(let xv=minX;xv<=maxX;xv+=0.3)lineData.push({x:xv,y:reg.fn(xv)});}
+
+    const mkPt=(c,regFn)=>({
+      x:getX(c), y:isBase(c)?0:getYVal(c),
+      cc:c.cc, name:c.name, xv:getX(c),
+      pred:regFn?regFn(getX(c)):null,
+      approx:APPROX.has(c.cc), zero:ZERO.has(c.cc)
+    });
+
+    // Use hollow circles for approximate values to visually flag them
+    const inRegExact=inReg.filter(c=>!APPROX.has(c.cc));
+    const inRegApprox=inReg.filter(c=>APPROX.has(c.cc));
+
+    const datasets=[
+      {type:'scatter',label:'EGB exact',
+       data:inRegExact.filter(c=>EGB.has(c.cc)).map(c=>mkPt(c,reg?reg.fn:null)),
+       backgroundColor:'#4a8fe8',pointRadius:7,pointHoverRadius:9,borderColor:'transparent'},
+      {type:'scatter',label:'Non-EGB exact',
+       data:inRegExact.filter(c=>!EGB.has(c.cc)).map(c=>mkPt(c,reg?reg.fn:null)),
+       backgroundColor:'#2db87a',pointRadius:7,pointHoverRadius:9,borderColor:'transparent'},
+      {type:'scatter',label:'EGB approx',
+       data:inRegApprox.filter(c=>EGB.has(c.cc)).map(c=>mkPt(c,reg?reg.fn:null)),
+       backgroundColor:'transparent',pointRadius:7,pointHoverRadius:9,borderColor:'#4a8fe8',borderWidth:1.5,
+       borderDash:[3,2]},
+      {type:'scatter',label:'Non-EGB approx',
+       data:inRegApprox.filter(c=>!EGB.has(c.cc)).map(c=>mkPt(c,reg?reg.fn:null)),
+       backgroundColor:'transparent',pointRadius:7,pointHoverRadius:9,borderColor:'#2db87a',borderWidth:1.5},
+      {type:'scatter',label:'Excluded',
+       data:outReg.map(c=>mkPt(c,null)),
+       backgroundColor:'#2a2f3a',pointRadius:6,pointHoverRadius:8,borderWidth:1,borderColor:'#4a5060'},
+      {type:'scatter',label:'Base',
+       data:basePts.map(c=>({...mkPt(c,null),y:0})),
+       backgroundColor:'transparent',pointRadius:8,pointHoverRadius:10,borderWidth:2,borderColor:'#4a8fe8'},
+      {type:'line',label:'Fit',data:lineData,
+       borderColor:'#e8a23a',borderWidth:2,pointRadius:0,tension:0.3,fill:false},
+    ];
+
+    const allY=[...allWithData,...basePts].map(c=>isBase(c)?0:getYVal(c)).filter(v=>v!=null);
+    const minY=Math.min(...allY), maxY=Math.max(...allY), padY=(maxY-minY)*0.12;
+
+    const crossPlugin=makeCrosshairPlugin(()=>crosshairPt);
+    const lblPlugin=makeLabelPlugin(c=>getX(c),isBase,isEffExcl,c=>getX(c),c=>getYVal(c));
+
+    const canv=document.getElementById('cb-sc');
+    if(scChart)scChart.destroy();
+    scChart=new Chart(canv,{
+      data:{datasets},
+      options:{
+        responsive:true,maintainAspectRatio:false,animation:{duration:180},
+        layout:{padding:{top:16,right:24,bottom:8,left:36}},
+        plugins:{legend:{display:false},tooltip:{enabled:false}},
+        onHover:(evt,elements)=>{
+          crosshairPt=null;
+          if(elements&&elements.length>0){
+            const pt=scChart.data.datasets[elements[0].datasetIndex].data[elements[0].index];
+            if(pt&&pt.cc){crosshairPt={x:pt.x,y:pt.y};updateHoverBox(pt);}
+            else updateHoverBox(null);
+          }else updateHoverBox(null);
+          if(scChart)scChart.draw();
+        },
+        scales:{
+          x:{min:minX,max:maxX,
+            grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.1)'},
+            title:{display:true,text:xLbl(),color:'#555b6b',font:{size:11,family:"'DM Mono',monospace"}},
+            ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"},callback:v=>v.toFixed(0)+'%'}},
+          y:{min:minY-padY,max:maxY+padY,
+            grid:{color:'rgba(255,255,255,0.05)'},border:{color:'rgba(255,255,255,0.1)'},
+            title:{display:true,text:yLbl(),color:'#555b6b',font:{size:11,family:"'DM Mono',monospace"}},
+            ticks:{color:'#555b6b',font:{size:10,family:"'DM Mono',monospace"},callback:v=>tickFmt(v)}}
+        }
+      },
+      plugins:[crossPlugin,lblPlugin]
+    });
+    canv.onmouseleave=()=>{crosshairPt=null;updateHoverBox(null);if(scChart)scChart.draw();};
+
+    if(reg){
+      const rd=inReg.map((c,i)=>({cc:c.cc,resid:parseFloat((getYVal(c)-reg.pred[i]).toFixed(1)),egb:EGB.has(c.cc)})).sort((a,b)=>a.resid-b.resid);
+      if(rcChart)rcChart.destroy();
+      rcChart=buildResidChart('cb-rc',rd);
+    }else{if(rcChart){rcChart.destroy();rcChart=null;}}
+    buildPills();
+  }
+
+  function buildPills(){
+    const grid=document.getElementById('cb-pills');grid.innerHTML='';
+    RAW.forEach(c=>{
+      const xv=getX(c), yv=getYVal(c), bm=isBase(c);
+      const noData=(xv==null||yv==null)&&!bm;
+      const effExcl=isEffExcl(c), egbFilt=egbOnly&&!EGB.has(c.cc)&&!manualExcluded.has(c.cc);
+      const btn=document.createElement('button');
+      const cls=['pill'];
+      if(EGB.has(c.cc))cls.push('egb-pill');
+      if(effExcl)cls.push('excl');
+      if(bm)cls.push('base-mark');
+      btn.className=cls.join(' ');
+      const approxFlag=APPROX.has(c.cc)?' ~':'';
+      const zeroFlag=ZERO.has(c.cc)?' ∅':'';
+      btn.textContent=c.cc+(noData?' —':bm?' ◎':egbFilt?' ·':(approxFlag||zeroFlag));
+      btn.title=APPROX.has(c.cc)?'Approximate figure':ZERO.has(c.cc)?'Zero holdings (QT complete)':'';
+      if(noData)btn.style.opacity='0.3';
+      if(egbFilt)btn.style.borderStyle='dashed';
+      btn.onclick=()=>{
+        if(noData||bm)return;
+        manualExcluded.has(c.cc)?manualExcluded.delete(c.cc):manualExcluded.add(c.cc);
+        render();
+      };
+      grid.appendChild(btn);
+    });
+  }
+
+  return{
+    setX(x,el){xMetric=x;document.querySelectorAll('#cb-xseg .btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setMode(m,el){
+      mode=m;document.querySelectorAll('#cb-mseg .btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');
+      const bg=document.getElementById('cb-base-group');
+      bg.style.display=m==='yspread'?'flex':'none';if(m==='yspread')bg.style.flexDirection='column';
+      render();
+    },
+    setTenor(t,el){tenor=t;document.querySelectorAll('#cb-tseg .btn-sm').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setFit(f,el){fit=f;document.querySelectorAll('#cb-fseg .btn-sm').forEach(b=>b.classList.remove('on'));el.classList.add('on');render();},
+    setBase(v){base=v;updateFormula('cb-base-formula',v);render();},
+    toggleEGB(){
+      egbOnly=!egbOnly;
+      document.getElementById('cb-egb-btn').classList.toggle('on',egbOnly);
+      document.getElementById('cb-egb-hint').textContent=egbOnly?'Non-EGB excluded. Individual toggles apply.':'';
+      render();
+    },
+    render,
+    init(){
+      buildBaseSelector('cb-base-sel','cb-base-formula',base,v=>{base=v;updateFormula('cb-base-formula',v);render();});
+      render();
+    }
+  };
+})();
+
+/* ══════════════════════════════════════════
+   TAB SWITCHING
+══════════════════════════════════════════ */
+function switchTab(t){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('on'));
+  event.target.classList.add('on');
+  document.getElementById('tab-'+t).classList.add('on');
+  if(t==='debt')D.render&&D.render();
+  if(t==='polrisk')P.render&&P.render();
+  if(t==='gdp')GDP.render&&GDP.render();
+  if(t==='inflation')INF.render&&INF.render();
+  if(t==='cbholdings')CB.render&&CB.render();
+}
+
+/* ══ INIT ══ */
+R.init();
+D.init();
+P.init();
+GDP.init();
+INF.init();
+CB.init();
+</script>
+
+</body>
+</html>
